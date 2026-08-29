@@ -124,21 +124,24 @@ function Today() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Today's score" className="flex items-center gap-5">
-          <Ring value={computed.score} label="/ 100" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <p className="text-sm text-muted-foreground">
-              {computed.score >= 75
-                ? "Solid day. Keep it moving."
-                : computed.score >= 40
-                  ? "Halfway there. Knock out one priority."
-                  : "Slow start. Pick one thing and start it."}
-            </p>
-            <Button size="sm" variant="secondary" onClick={minimumViableDay}>
-              <Sparkles className="size-3.5" /> Minimum Viable Day
-            </Button>
+        <Panel title="Today's score">
+          <div className="flex flex-wrap items-center gap-5">
+            <Ring value={computed.score} label="/ 100" />
+            <div className="min-w-[10rem] flex-1 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {computed.score >= 75
+                  ? "Solid day. Keep it moving."
+                  : computed.score >= 40
+                    ? "Halfway there. Knock out one priority."
+                    : "Slow start. Pick one thing and start it."}
+              </p>
+              <Button size="sm" variant="secondary" onClick={minimumViableDay}>
+                <Sparkles className="size-3.5" /> Minimum Viable Day
+              </Button>
+            </div>
           </div>
         </Panel>
+
 
         <Panel title="Life score">
           <div className="flex items-baseline gap-2">
