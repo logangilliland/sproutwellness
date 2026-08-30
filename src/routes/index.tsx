@@ -57,25 +57,20 @@ function greeting() {
 function Today() {
   const { data, isLoading } = useLifeData();
   const refresh = useRefreshLife();
-  const [newTask, setNewTask] = useState("");
   const today = todayKey();
 
   const computed = useMemo(() => {
     if (!data) return null;
-    const score = productivityScore(data, today);
     const ls = lifeScore(data);
     const milestone = nextMilestone(data.events);
     const vape = streak(new Set(vapeFreeDates(data)));
-    return { score, ls, milestone, vape };
-  }, [data, today]);
+    return { ls, milestone, vape };
+  }, [data]);
 
   if (isLoading || !data || !computed) {
     return <p className="text-muted-foreground">Loading your day…</p>;
   }
 
-  const tasks = data.tasks
-    .filter((t) => t.date === today)
-    .sort((a, b) => a.priority - b.priority || a.sort_order - b.sort_order);
   const habits = data.habits.filter((h) => h.active);
   const doneHabits = new Set(
     data.habitLogs.filter((l) => l.date === today && l.completed).map((l) => l.habit_id),
@@ -87,20 +82,6 @@ function Today() {
   const savings = data.accounts.find((a) => a.is_savings);
   const cash = data.accounts.find((a) => a.kind === "cash");
 
-  async function submitTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newTask.trim()) return;
-    await addTask(newTask.trim(), { date: today, priority: 2 });
-    setNewTask("");
-    refresh();
-  }
-
-  async function minimumViableDay() {
-    const items = ["Shower", "Eat something real", "Do one useful task"];
-    for (const t of items) await addTask(t, { date: today, priority: 1 });
-    refresh();
-    toast.success("Minimum Viable Day set. Three things and it counts as a win.");
-  }
 
   return (
     <div className="space-y-5">
