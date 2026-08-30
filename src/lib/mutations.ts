@@ -1,5 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { todayKey } from "@/lib/lifeos";
+import {
+  DEFAULT_CATEGORIES,
+  OPTIONAL_CATEGORIES,
+  SUGGESTION_CATALOG,
+  type CategoryBreakdown,
+  type PointCategory,
+  type PointSuggestion,
+} from "@/lib/points";
 
 export async function logChange(summary: string, detail?: string) {
   await supabase.from("change_log").insert({ summary, detail: detail ?? null });
