@@ -77,6 +77,7 @@ function CalendarPage() {
   for (const e of data.events) {
     byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
   }
+  const tasksByDate = new Set(data.tasks.filter((t) => t.date).map((t) => t.date as string));
   const scoreByDate = new Map(data.dayScores.map((s) => [s.date, s]));
   const selectedScore = selected ? scoreByDate.get(selected) : undefined;
   const selectedActivities = selected
