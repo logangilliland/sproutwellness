@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Plus, Star, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { Panel, Chip } from "@/components/lifeos/Bits";
+import { Panel, Chip, Meter } from "@/components/lifeos/Bits";
 import { useLifeData, useRefreshLife } from "@/hooks/useLifeData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteRow } from "@/lib/mutations";
+import { scoreTone } from "@/lib/points";
 import { EVENT_TYPES, addDays, daysBetween, prettyDate, todayKey, toKey, fromKey } from "@/lib/lifeos";
 
 export const Route = createFileRoute("/calendar")({
@@ -50,6 +51,7 @@ function CalendarPage() {
   const { data, isLoading } = useLifeData();
   const refresh = useRefreshLife();
   const [monthOffset, setMonthOffset] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     type: "personal",
