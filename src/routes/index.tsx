@@ -1,13 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Flame, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Flame } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { Panel, Meter, Ring, Stat, Chip } from "@/components/lifeos/Bits";
+import { Panel, Meter, Stat, Chip } from "@/components/lifeos/Bits";
+import { DayPoints } from "@/components/lifeos/DayPoints";
 import { useLifeData, useRefreshLife } from "@/hooks/useLifeData";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { addTask, deleteRow, toggleHabit, toggleTask } from "@/lib/mutations";
+import { toggleHabit } from "@/lib/mutations";
 import {
   daysBetween,
   exerciseThisWeek,
@@ -16,7 +14,6 @@ import {
   money,
   nextMilestone,
   phaseFor,
-  productivityScore,
   streak,
   todayKey,
   totalMoney,
@@ -24,7 +21,6 @@ import {
   weekEarnings,
   prettyDate,
 } from "@/lib/lifeos";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,25 +57,20 @@ function greeting() {
 function Today() {
   const { data, isLoading } = useLifeData();
   const refresh = useRefreshLife();
-  const [newTask, setNewTask] = useState("");
   const today = todayKey();
 
   const computed = useMemo(() => {
     if (!data) return null;
-    const score = productivityScore(data, today);
     const ls = lifeScore(data);
     const milestone = nextMilestone(data.events);
     const vape = streak(new Set(vapeFreeDates(data)));
-    return { score, ls, milestone, vape };
-  }, [data, today]);
+    return { ls, milestone, vape };
+  }, [data]);
 
   if (isLoading || !data || !computed) {
     return <p className="text-muted-foreground">Loading your day…</p>;
   }
 
-  const tasks = data.tasks
-    .filter((t) => t.date === today)
-    .sort((a, b) => a.priority - b.priority || a.sort_order - b.sort_order);
   const habits = data.habits.filter((h) => h.active);
   const doneHabits = new Set(
     data.habitLogs.filter((l) => l.date === today && l.completed).map((l) => l.habit_id),
@@ -91,20 +82,6 @@ function Today() {
   const savings = data.accounts.find((a) => a.is_savings);
   const cash = data.accounts.find((a) => a.kind === "cash");
 
-  async function submitTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newTask.trim()) return;
-    await addTask(newTask.trim(), { date: today, priority: 2 });
-    setNewTask("");
-    refresh();
-  }
-
-  async function minimumViableDay() {
-    const items = ["Shower", "Eat something real", "Do one useful task"];
-    for (const t of items) await addTask(t, { date: today, priority: 1 });
-    refresh();
-    toast.success("Minimum Viable Day set. Three things and it counts as a win.");
-  }
 
   return (
     <div className="space-y-5">
@@ -123,24 +100,16 @@ function Today() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Today's score">
-          <div className="flex flex-wrap items-center gap-5">
-            <Ring value={computed.score} label="/ 100" />
-            <div className="min-w-[10rem] flex-1 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {computed.score >= 75
-                  ? "Solid day. Keep it moving."
-                  : computed.score >= 40
-                    ? "Halfway there. Knock out one priority."
-                    : "Slow start. Pick one thing and start it."}
-              </p>
-              <Button size="sm" variant="secondary" onClick={minimumViableDay}>
-                <Sparkles className="size-3.5" /> Minimum Viable Day
-              </Button>
-            </div>
-          </div>
-        </Panel>
+      <DayPoints
+        date={today}
+        categories={data.categories}
+        activities={data.activities}
+        suggestions={data.suggestions}
+        refresh={refresh}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+
 
 
         <Panel title="Life score">
@@ -187,62 +156,8 @@ function Today() {
         </Panel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Today's priorities">
-          <ul className="space-y-1.5">
-            {tasks.length === 0 && (
-              <li className="text-sm text-muted-foreground">
-                Nothing planned yet. Add 3–5 things that matter.
-              </li>
-            )}
-            {tasks.map((t) => (
-              <li
-                key={t.id}
-                className="group flex items-center gap-3 rounded-lg border border-transparent px-2 py-2 hover:border-border hover:bg-surface/60"
-              >
-                <Checkbox
-                  checked={t.done}
-                  onCheckedChange={async (v) => {
-                    await toggleTask(t.id, Boolean(v));
-                    refresh();
-                  }}
-                />
-                <span
-                  className={
-                    t.done ? "flex-1 text-sm text-muted-foreground line-through" : "flex-1 text-sm"
-                  }
-                >
-                  {t.title}
-                </span>
-                {t.priority === 1 && (
-                  <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                    KEY
-                  </span>
-                )}
-                <button
-                  className="opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={async () => {
-                    await deleteRow("tasks", t.id);
-                    refresh();
-                  }}
-                  aria-label="Delete task"
-                >
-                  <Trash2 className="size-3.5 text-muted-foreground hover:text-destructive" />
-                </button>
-              </li>
-            ))}
-          </ul>
-          <form onSubmit={submitTask} className="mt-3 flex gap-2">
-            <Input
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              placeholder="Add a priority…"
-            />
-            <Button type="submit" size="icon" aria-label="Add task">
-              <Plus className="size-4" />
-            </Button>
-          </form>
-        </Panel>
+      <div className="grid gap-4">
+
 
         <Panel
           title="Habit check-in"
@@ -368,7 +283,10 @@ function Stats({ data }: { data: NonNullable<ReturnType<typeof useLifeData>["dat
   const hours = week.reduce((s, x) => s + Number(x.hours), 0);
   return (
     <div className="grid gap-3 sm:grid-cols-4">
-      <Stat label="Tasks done today" value={data.tasks.filter((t) => t.date === todayKey() && t.done).length} />
+      <Stat
+        label="Activities logged today"
+        value={data.activities.filter((a) => a.date === todayKey()).length}
+      />
       <Stat label="Hours worked (month)" value={hours.toFixed(1)} />
       <Stat
         label="Avg $/hour"

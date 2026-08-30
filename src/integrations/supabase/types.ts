@@ -167,6 +167,36 @@ export type Database = {
         }
         Relationships: []
       }
+      day_scores: {
+        Row: {
+          breakdown: Json
+          created_at: string
+          date: string
+          id: string
+          overall_pct: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          breakdown?: Json
+          created_at?: string
+          date: string
+          id?: string
+          overall_pct?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          breakdown?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          overall_pct?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -330,6 +360,130 @@ export type Database = {
           weight?: number
         }
         Relationships: []
+      }
+      point_activities: {
+        Row: {
+          category_id: string
+          created_at: string
+          date: string
+          id: string
+          points: number
+          reason: string | null
+          source: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          points?: number
+          reason?: string | null
+          source?: string
+          title: string
+          user_id?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          points?: number
+          reason?: string | null
+          source?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_activities_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "point_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          daily_target: number
+          emoji: string
+          id: string
+          key: string
+          label: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          daily_target?: number
+          emoji?: string
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          daily_target?: number
+          emoji?: string
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      point_suggestions: {
+        Row: {
+          category_id: string
+          created_at: string
+          date: string
+          id: string
+          points: number
+          sort_order: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          points?: number
+          sort_order?: number
+          title: string
+          user_id?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          points?: number
+          sort_order?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_suggestions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "point_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

@@ -1,8 +1,38 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { LifeData } from "@/lib/lifeos";
+import { todayKey } from "@/lib/lifeos";
+import type {
+  DayScoreRow,
+  PointActivity,
+  PointCategory,
+  PointSuggestion,
+} from "@/lib/points";
+import { ensureCategories, ensureSuggestions } from "@/lib/mutations";
 
-async function fetchAll(): Promise<LifeData> {
+export type FullData = LifeData & {
+  categories: PointCategory[];
+  activities: PointActivity[];
+  suggestions: PointSuggestion[];
+  dayScores: DayScoreRow[];
+};
+
+async function fetchPoints() {
+  const [cats, acts, sugg, scores] = await Promise.all([
+    supabase.from("point_categories").select("*").order("sort_order"),
+    supabase.from("point_activities").select("*").order("created_at", { ascending: false }),
+    supabase.from("point_suggestions").select("*").order("sort_order"),
+    supabase.from("day_scores").select("id,date,overall_pct,breakdown").order("date", { ascending: false }),
+  ]);
+  return {
+    categories: (cats.data ?? []) as unknown as PointCategory[],
+    activities: (acts.data ?? []) as unknown as PointActivity[],
+    suggestions: (sugg.data ?? []) as unknown as PointSuggestion[],
+    dayScores: (scores.data ?? []) as unknown as DayScoreRow[],
+  };
+}
+
+async function fetchAll(): Promise<FullData> {
   await supabase.rpc("seed_life_os");
   const [
     habits,
@@ -32,6 +62,14 @@ async function fetchAll(): Promise<LifeData> {
     supabase.from("change_log").select("*").order("created_at", { ascending: false }).limit(80),
   ]);
 
+  let points = await fetchPoints();
+  if (!points.categories.length) {
+    await ensureCategories(points.categories);
+    points = await fetchPoints();
+  }
+  const seeded = await ensureSuggestions(todayKey(), points.categories, points.suggestions);
+  if (seeded) points = await fetchPoints();
+
   return {
     habits: (habits.data ?? []) as LifeData["habits"],
     habitLogs: (habitLogs.data ?? []) as LifeData["habitLogs"],
@@ -45,6 +83,7 @@ async function fetchAll(): Promise<LifeData> {
     shifts: (shifts.data ?? []) as LifeData["shifts"],
     dailyLogs: (dailyLogs.data ?? []) as LifeData["dailyLogs"],
     changes: (changes.data ?? []) as LifeData["changes"],
+    ...points,
   };
 }
 

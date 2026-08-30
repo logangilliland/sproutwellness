@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { computeBreakdown, SUGGESTION_CATALOG } from "@/lib/points";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DB = SupabaseClient<any, any, any>;
@@ -25,6 +26,15 @@ export async function buildSnapshot(supabase: DB) {
       supabase.from("classes").select("name,professor,meeting_times,location,term"),
     ]);
 
+  const [catsRes, actsRes, suggRes] = await Promise.all([
+    supabase.from("point_categories").select("*").order("sort_order"),
+    supabase.from("point_activities").select("*").gte("date", "1900-01-01"),
+    supabase.from("point_suggestions").select("*").eq("date", today),
+  ]);
+  const cats = (catsRes.data ?? []) as any[];
+  const acts = (actsRes.data ?? []) as any[];
+  const { breakdown, overall } = computeBreakdown(cats as any, acts as any, today);
+
   const habitList = habits.data ?? [];
   const logList = logs.data ?? [];
   const doneToday = new Set(
@@ -33,6 +43,25 @@ export async function buildSnapshot(supabase: DB) {
 
   const lines: string[] = [];
   lines.push(`TODAY: ${today}`);
+  lines.push(
+    `CATEGORY POINTS TODAY (overall ${overall}%): ${breakdown
+      .map((b) => `${b.label} ${b.points}/${b.target}${b.bonus ? ` (+${b.bonus} bonus)` : ""}`)
+      .join("; ") || "no categories"}`,
+  );
+  lines.push(
+    `CATEGORY IDS: ${cats.map((c: any) => `${c.label}=${c.key}${c.active ? "" : " (inactive)"}`).join(", ") || "none"}`,
+  );
+  lines.push(
+    `TODAY'S ACTIVITIES LOGGED: ${acts
+      .filter((a: any) => a.date === today)
+      .map((a: any) => `${a.title} +${a.points} [${cats.find((c: any) => c.id === a.category_id)?.key ?? "?"}]`)
+      .join("; ") || "none"}`,
+  );
+  lines.push(
+    `TODAY'S SUGGESTIONS: ${(suggRes.data ?? [])
+      .map((sg: any) => `${cats.find((c: any) => c.id === sg.category_id)?.key ?? "?"}: ${sg.title} (+${sg.points})`)
+      .join("; ") || "none"}`,
+  );
   lines.push(
     `HABITS: ${habitList
       .map((h: any) => `${h.name} [${h.category}${h.active ? "" : ", paused"}${doneToday.has(h.id) ? ", done today" : ""}]`)
@@ -100,6 +129,16 @@ Hard rules:
 - Small obvious updates: just make them. Big changes (changing a goal target, deleting a habit or goal, moving a milestone): make the change but say clearly what you changed, and ask if he wants it reverted.
 - A single message can contain several updates — process all of them with multiple tool calls.
 - After tools run, reply in 1-4 short sentences summarizing what you recorded and what to do next. No bullet walls.
+DAILY CATEGORY POINT SYSTEM (this is the core of the app — not a checklist):
+- Each day has categories (default 🏃 Fitness, ❤️ Health, 💰 Work, 📁 Projects; 📚 School can be added). Each has a daily point target (default 25).
+- Logan earns points by doing ANY activity that fits the category. Suggestions are optional ideas, never obligations. If he swaps the suggested gym session for a run or a hike, that is a success — award the points, never criticize the swap.
+- Every activity belongs to exactly ONE category. Fitness = physical activity. Health = nutrition, hydration, sleep, hygiene, vape-free. Work = earning money. Projects = room move, chores, trip prep, errands. School = coursework. Never double-count one activity into two categories.
+- When Logan reports anything he did, call log_points with reasonable, consistent points and a one-line reason. Rough scale: 25 = a full solid effort (gym session, hike, 4h of Uber Eats, an hour+ of real project work), 15-20 = solid partial effort (run, 2h shift, cooked a protein meal, packing boxes), 10 = small but real (walk, shower, laundry started), 5 = minor.
+- Cap logic: a category is complete at its target; extra points show as a bonus but never push that category past 100%. The daily percentage is the average of the capped category percentages. A Perfect Day = target hit in every active category.
+- If asked why an activity got its points, explain using the scale above.
+- Use manage_suggestions to refresh or swap the day's suggested activities based on his goals, deadlines and what he has already done. Keep them short and doable.
+- Use set_category_target only when he asks to change the difficulty.
+
 - Use adaptive planning: if he keeps failing a big task, suggest a smaller version. If he crushes a goal, suggest raising it. If a deadline is close, raise its priority.`;
 
 type Ctx = { supabase: DB };
@@ -301,7 +340,123 @@ export const TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "log_points",
+      description:
+        "Log a completed activity and award points in exactly one category. Use for anything Logan reports doing.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string", description: "fitness | health | work | projects | school" },
+          title: { type: "string", description: "Short description of what he did" },
+          points: { type: "number" },
+          reason: { type: "string", description: "One line explaining the point value" },
+          date: { type: "string", description: "YYYY-MM-DD, defaults to today" },
+        },
+        required: ["category", "title", "points"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "remove_points",
+      description: "Remove a logged activity by fuzzy title match for a date.",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" }, date: { type: "string" } },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "set_category_target",
+      description: "Change the daily point target for one category, or all of them.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string", description: "category key, or 'all'" },
+          target: { type: "number" },
+        },
+        required: ["category", "target"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "manage_category",
+      description: "Add, activate or deactivate a point category (e.g. add school when term starts).",
+      parameters: {
+        type: "object",
+        properties: {
+          action: { type: "string", enum: ["add", "activate", "deactivate"] },
+          category: { type: "string" },
+          label: { type: "string" },
+          emoji: { type: "string" },
+        },
+        required: ["action", "category"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "manage_suggestions",
+      description:
+        "Replace the suggested activities for a category on a date. Pass 3-5 short suggestions with point values.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: { type: "string" },
+          date: { type: "string" },
+          suggestions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: { title: { type: "string" }, points: { type: "number" } },
+              required: ["title", "points"],
+            },
+          },
+        },
+        required: ["category", "suggestions"],
+      },
+    },
+  },
 ];
+
+async function findCategory(ctx: Ctx, key: string) {
+  const { data } = await ctx.supabase.from("point_categories").select("*");
+  const list = (data ?? []) as any[];
+  const k = String(key).toLowerCase();
+  return (
+    list.find((c) => c.key.toLowerCase() === k) ??
+    list.find((c) => c.label.toLowerCase().includes(k) || k.includes(c.key.toLowerCase()))
+  );
+}
+
+async function recomputeDayScore(ctx: Ctx, date: string) {
+  const [cats, acts] = await Promise.all([
+    ctx.supabase.from("point_categories").select("*"),
+    ctx.supabase.from("point_activities").select("*").eq("date", date),
+  ]);
+  const { breakdown, overall } = computeBreakdown(
+    (cats.data ?? []) as any,
+    (acts.data ?? []) as any,
+    date,
+  );
+  await ctx.supabase
+    .from("day_scores")
+    .upsert(
+      { date, overall_pct: overall, breakdown, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,date" },
+    );
+  return { breakdown, overall };
+}
 
 export async function runTool(ctx: Ctx, name: string, args: any): Promise<string> {
   const today = todayKey();
@@ -505,6 +660,92 @@ export async function runTool(ctx: Ctx, name: string, args: any): Promise<string
       await sb.from("projects").update(patch).eq("id", proj.id);
       await log(ctx, `Project updated: ${proj.name}`, JSON.stringify(patch));
       return `updated project "${proj.name}"`;
+    }
+    case "log_points": {
+      const cat = await findCategory(ctx, args.category);
+      if (!cat) return `no category matching "${args.category}"`;
+      const date = args.date ?? today;
+      const points = Math.round(Number(args.points) || 0);
+      await sb.from("point_activities").insert({
+        category_id: cat.id,
+        date,
+        title: args.title,
+        points,
+        reason: args.reason ?? null,
+        source: "ai",
+      });
+      const { overall } = await recomputeDayScore(ctx, date);
+      await log(ctx, `${cat.emoji} ${cat.label} +${points}: ${args.title}`, args.reason ?? null);
+      return `logged "${args.title}" as ${cat.label} +${points} on ${date}; day is now ${overall}%`;
+    }
+    case "remove_points": {
+      const date = args.date ?? today;
+      const { data } = await sb.from("point_activities").select("id,title").eq("date", date);
+      const hit = (data ?? []).find((a: any) =>
+        a.title.toLowerCase().includes(String(args.title).toLowerCase()),
+      );
+      if (!hit) return `no activity matching "${args.title}" on ${date}`;
+      await sb.from("point_activities").delete().eq("id", hit.id);
+      const { overall } = await recomputeDayScore(ctx, date);
+      await log(ctx, `Activity removed: ${hit.title}`);
+      return `removed "${hit.title}"; day is now ${overall}%`;
+    }
+    case "set_category_target": {
+      const target = Math.max(1, Math.round(Number(args.target) || 25));
+      if (String(args.category).toLowerCase() === "all") {
+        await sb.from("point_categories").update({ daily_target: target }).gte("daily_target", 0);
+        await log(ctx, `Daily target set to ${target} for all categories`);
+        return `all categories now target ${target} points/day`;
+      }
+      const cat = await findCategory(ctx, args.category);
+      if (!cat) return `no category matching "${args.category}"`;
+      await sb.from("point_categories").update({ daily_target: target }).eq("id", cat.id);
+      await log(ctx, `${cat.label} target set to ${target}`);
+      return `${cat.label} now targets ${target} points/day`;
+    }
+    case "manage_category": {
+      const existing = await findCategory(ctx, args.category);
+      if (args.action === "add") {
+        if (existing) {
+          await sb.from("point_categories").update({ active: true }).eq("id", existing.id);
+          return `${existing.label} is active again`;
+        }
+        const key = String(args.category).toLowerCase();
+        await sb.from("point_categories").insert({
+          key,
+          label: args.label ?? key.charAt(0).toUpperCase() + key.slice(1),
+          emoji: args.emoji ?? "⭐",
+          sort_order: 9,
+        });
+        await log(ctx, `Category added: ${args.label ?? key}`);
+        return `added category ${args.label ?? key}`;
+      }
+      if (!existing) return `no category matching "${args.category}"`;
+      await sb
+        .from("point_categories")
+        .update({ active: args.action === "activate" })
+        .eq("id", existing.id);
+      await log(ctx, `Category ${args.action}d: ${existing.label}`);
+      return `${existing.label} ${args.action}d`;
+    }
+    case "manage_suggestions": {
+      const cat = await findCategory(ctx, args.category);
+      if (!cat) return `no category matching "${args.category}"`;
+      const date = args.date ?? today;
+      const list = Array.isArray(args.suggestions) && args.suggestions.length
+        ? args.suggestions
+        : (SUGGESTION_CATALOG[cat.key] ?? []).slice(0, 5);
+      await sb.from("point_suggestions").delete().eq("category_id", cat.id).eq("date", date);
+      await sb.from("point_suggestions").insert(
+        list.slice(0, 6).map((s: any, i: number) => ({
+          category_id: cat.id,
+          date,
+          title: s.title,
+          points: Math.round(Number(s.points) || 15),
+          sort_order: i,
+        })),
+      );
+      return `updated ${cat.label} suggestions for ${date}`;
     }
     default:
       return `unknown tool ${name}`;
