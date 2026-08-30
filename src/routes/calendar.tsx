@@ -75,14 +75,19 @@ function CalendarPage() {
   for (const e of data.events) {
     byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
   }
-  const tasksByDate = new Set(data.tasks.filter((t) => t.date).map((t) => t.date as string));
+  const scoreByDate = new Map(data.dayScores.map((s) => [s.date, s]));
+  const selectedScore = selected ? scoreByDate.get(selected) : undefined;
+  const selectedActivities = selected
+    ? data.activities.filter((a) => a.date === selected)
+    : [];
+  const catById = new Map(data.categories.map((c) => [c.id, c]));
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-2xl font-bold">Calendar</h1>
         <p className="text-sm text-muted-foreground">
-          School, work, fraternity, trips and deadlines — kept as life events.
+          School, work, fraternity, trips and deadlines — plus the score you earned each day.
         </p>
       </div>
 
@@ -112,18 +117,29 @@ function CalendarPage() {
             const key = toKey(d);
             const inMonth = d.getMonth() === anchor.getMonth();
             const events = byDate.get(key) ?? [];
+            const score = scoreByDate.get(key);
             return (
-              <div
+              <button
                 key={key}
-                className={`min-h-16 rounded-lg border p-1 text-left text-[11px] ${
+                type="button"
+                onClick={() => setSelected(key === selected ? null : key)}
+                className={`min-h-16 rounded-lg border p-1 text-left text-[11px] transition-colors ${
                   key === todayKey()
                     ? "border-primary bg-primary/10"
-                    : "border-border bg-surface/30"
+                    : key === selected
+                      ? "border-accent bg-surface/70"
+                      : "border-border bg-surface/30 hover:border-primary/40"
                 } ${inMonth ? "" : "opacity-35"}`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-mono">{d.getDate()}</span>
-                  {tasksByDate.has(key) && <span className="size-1.5 rounded-full bg-accent" />}
+                  {score ? (
+                    <span className={`font-mono text-[10px] ${scoreTone(score.overall_pct)}`}>
+                      {score.overall_pct}%
+                    </span>
+                  ) : (
+                    tasksByDate.has(key) && <span className="size-1.5 rounded-full bg-accent" />
+                  )}
                 </div>
                 {events.slice(0, 2).map((e) => (
                   <div key={e.id} className="mt-0.5 truncate rounded bg-muted px-1 py-0.5">
@@ -134,11 +150,88 @@ function CalendarPage() {
                 {events.length > 2 && (
                   <div className="text-muted-foreground">+{events.length - 2}</div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
       </Panel>
+
+      {selected && (
+        <Panel
+          title={prettyDate(selected)}
+          action={
+            <button
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setSelected(null)}
+            >
+              Close
+            </button>
+          }
+        >
+          {selectedScore ? (
+            <>
+              <div className="flex items-baseline gap-2">
+                <span className={`stat-number text-4xl ${scoreTone(selectedScore.overall_pct)}`}>
+                  {selectedScore.overall_pct}%
+                </span>
+                <span className="text-sm text-muted-foreground">overall</span>
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {(selectedScore.breakdown ?? []).map((b) => (
+                  <div key={b.key} className="rounded-lg border border-border bg-surface/40 p-2">
+                    <div className="flex justify-between text-sm">
+                      <span>
+                        {b.emoji} {b.label}
+                      </span>
+                      <span className="font-mono">
+                        {b.points}/{b.target}
+                        {b.points >= b.target && <span className="ml-1 text-primary">✓</span>}
+                        {b.bonus > 0 && <span className="ml-1 text-money">+{b.bonus}</span>}
+                      </span>
+                    </div>
+                    <Meter value={b.pct} className="mt-1.5" />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">No score recorded for this day.</p>
+          )}
+
+          {selectedActivities.length > 0 && (
+            <div className="mt-4">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Activities
+              </p>
+              <ul className="mt-1.5 space-y-1">
+                {selectedActivities.map((a) => (
+                  <li key={a.id} className="flex items-center gap-2 text-sm">
+                    <span className="w-6">{catById.get(a.category_id)?.emoji ?? "•"}</span>
+                    <span className="flex-1 truncate" title={a.reason ?? undefined}>
+                      {a.title}
+                    </span>
+                    <span className="font-mono text-xs text-primary">+{a.points}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {(byDate.get(selected) ?? []).length > 0 && (
+            <div className="mt-4">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Events</p>
+              <ul className="mt-1.5 space-y-1 text-sm">
+                {(byDate.get(selected) ?? []).map((e) => (
+                  <li key={e.id} className="truncate">
+                    {e.is_milestone ? "★ " : ""}
+                    {e.title} <span className="text-muted-foreground">· {e.type}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Panel>
+      )}
 
       <Panel title="Add event">
         <form
