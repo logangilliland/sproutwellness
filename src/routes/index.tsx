@@ -368,7 +368,10 @@ function Stats({ data }: { data: NonNullable<ReturnType<typeof useLifeData>["dat
   const hours = week.reduce((s, x) => s + Number(x.hours), 0);
   return (
     <div className="grid gap-3 sm:grid-cols-4">
-      <Stat label="Tasks done today" value={data.tasks.filter((t) => t.date === todayKey() && t.done).length} />
+      <Stat
+        label="Activities logged today"
+        value={data.activities.filter((a) => a.date === todayKey()).length}
+      />
       <Stat label="Hours worked (month)" value={hours.toFixed(1)} />
       <Stat
         label="Avg $/hour"
