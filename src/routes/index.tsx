@@ -1,13 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Flame, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Flame } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { Panel, Meter, Ring, Stat, Chip } from "@/components/lifeos/Bits";
+import { Panel, Meter, Stat, Chip } from "@/components/lifeos/Bits";
+import { DayPoints } from "@/components/lifeos/DayPoints";
 import { useLifeData, useRefreshLife } from "@/hooks/useLifeData";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { addTask, deleteRow, toggleHabit, toggleTask } from "@/lib/mutations";
+import { toggleHabit } from "@/lib/mutations";
 import {
   daysBetween,
   exerciseThisWeek,
@@ -16,7 +14,6 @@ import {
   money,
   nextMilestone,
   phaseFor,
-  productivityScore,
   streak,
   todayKey,
   totalMoney,
@@ -24,7 +21,6 @@ import {
   weekEarnings,
   prettyDate,
 } from "@/lib/lifeos";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
