@@ -187,62 +187,8 @@ function Today() {
         </Panel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Today's priorities">
-          <ul className="space-y-1.5">
-            {tasks.length === 0 && (
-              <li className="text-sm text-muted-foreground">
-                Nothing planned yet. Add 3–5 things that matter.
-              </li>
-            )}
-            {tasks.map((t) => (
-              <li
-                key={t.id}
-                className="group flex items-center gap-3 rounded-lg border border-transparent px-2 py-2 hover:border-border hover:bg-surface/60"
-              >
-                <Checkbox
-                  checked={t.done}
-                  onCheckedChange={async (v) => {
-                    await toggleTask(t.id, Boolean(v));
-                    refresh();
-                  }}
-                />
-                <span
-                  className={
-                    t.done ? "flex-1 text-sm text-muted-foreground line-through" : "flex-1 text-sm"
-                  }
-                >
-                  {t.title}
-                </span>
-                {t.priority === 1 && (
-                  <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                    KEY
-                  </span>
-                )}
-                <button
-                  className="opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={async () => {
-                    await deleteRow("tasks", t.id);
-                    refresh();
-                  }}
-                  aria-label="Delete task"
-                >
-                  <Trash2 className="size-3.5 text-muted-foreground hover:text-destructive" />
-                </button>
-              </li>
-            ))}
-          </ul>
-          <form onSubmit={submitTask} className="mt-3 flex gap-2">
-            <Input
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              placeholder="Add a priority…"
-            />
-            <Button type="submit" size="icon" aria-label="Add task">
-              <Plus className="size-4" />
-            </Button>
-          </form>
-        </Panel>
+      <div className="grid gap-4">
+
 
         <Panel
           title="Habit check-in"
