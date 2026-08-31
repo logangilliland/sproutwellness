@@ -19,7 +19,8 @@ export const sendChatMessage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     return await chatWithTools(context.supabase, data.message, {
-      localDate: data.localDate,
-      timeZone: data.timeZone,
+      localDate: data.localDate ?? null,
+      timeZone: data.timeZone ?? null,
     });
+
   });
