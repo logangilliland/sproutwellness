@@ -45,7 +45,14 @@ export function ChatPanel() {
     setInput("");
     setBusy(true);
     try {
-      await send({ data: { message } });
+      await send({
+        data: {
+          message,
+          localDate: todayKey(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      });
+
       await refetch();
       refresh();
     } catch (err) {
