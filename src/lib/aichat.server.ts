@@ -999,7 +999,12 @@ export async function runTool(ctx: Ctx, name: string, args: any): Promise<string
   }
 }
 
-export async function chatWithTools(supabase: DB, userMessage: string) {
+export async function chatWithTools(
+  supabase: DB,
+  userMessage: string,
+  opts?: { localDate?: string | null; timeZone?: string | null },
+) {
+  const today = resolveToday(opts?.localDate, opts?.timeZone);
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured yet.");
 
@@ -1009,7 +1014,8 @@ export async function chatWithTools(supabase: DB, userMessage: string) {
     .order("created_at", { ascending: false })
     .limit(16);
 
-  const snapshot = await buildSnapshot(supabase);
+  const snapshot = await buildSnapshot(supabase, today);
+
 
   const messages: any[] = [
     { role: "system", content: `${SYSTEM_PROMPT}\n\nCURRENT STATE:\n${snapshot}` },
