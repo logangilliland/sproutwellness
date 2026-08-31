@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CalendarRouteImport } from './routes/calendar'
-import { Route as ChatRouteImport } from './routes/chat'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as HabitsRouteImport } from './routes/habits'
 import { Route as MoneyRouteImport } from './routes/money'
@@ -33,11 +32,6 @@ const AuthRoute = AuthRouteImport.update({
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatRoute = ChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GoalsRoute = GoalsRouteImport.update({
@@ -75,7 +69,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
-  '/chat': typeof ChatRoute
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
@@ -87,7 +80,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
-  '/chat': typeof ChatRoute
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
@@ -100,7 +92,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
-  '/chat': typeof ChatRoute
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
@@ -114,7 +105,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/calendar'
-    | '/chat'
     | '/goals'
     | '/habits'
     | '/money'
@@ -126,7 +116,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/calendar'
-    | '/chat'
     | '/goals'
     | '/habits'
     | '/money'
@@ -138,7 +127,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/calendar'
-    | '/chat'
     | '/goals'
     | '/habits'
     | '/money'
@@ -151,7 +139,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   CalendarRoute: typeof CalendarRoute
-  ChatRoute: typeof ChatRoute
   GoalsRoute: typeof GoalsRoute
   HabitsRoute: typeof HabitsRoute
   MoneyRoute: typeof MoneyRoute
@@ -181,13 +168,6 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof CalendarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat': {
-      id: '/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/goals': {
@@ -239,7 +219,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   CalendarRoute: CalendarRoute,
-  ChatRoute: ChatRoute,
   GoalsRoute: GoalsRoute,
   HabitsRoute: HabitsRoute,
   MoneyRoute: MoneyRoute,
