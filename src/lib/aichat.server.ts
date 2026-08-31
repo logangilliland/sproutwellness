@@ -501,7 +501,85 @@ export const TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "move_points",
+      description:
+        "Re-date logged activities that landed on the wrong day. Moves matching activities from one date to another and rescores both days.",
+      parameters: {
+        type: "object",
+        properties: {
+          from_date: { type: "string", description: "YYYY-MM-DD the activity is currently on" },
+          to_date: { type: "string", description: "YYYY-MM-DD it should be on" },
+          title: { type: "string", description: "Fuzzy title match; omit to move every activity on from_date" },
+        },
+        required: ["from_date", "to_date"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "manage_class",
+      description: "Add, update or remove a class in the school schedule.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: { type: "string", enum: ["create", "update", "delete"] },
+          name: { type: "string" },
+          professor: { type: "string" },
+          location: { type: "string" },
+          meeting_times: { type: "string" },
+          term: { type: "string" },
+          notes: { type: "string" },
+        },
+        required: ["action", "name"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_money_entry",
+      description: "Delete a wrong work shift or transaction.",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: { type: "string", enum: ["shift", "transaction"] },
+          date: { type: "string" },
+          amount: { type: "number", description: "Earnings for a shift, amount for a transaction" },
+        },
+        required: ["kind", "date"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_task",
+      description: "Delete a task by fuzzy title match.",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" } },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_project",
+      description: "Delete a project and its steps.",
+      parameters: {
+        type: "object",
+        properties: { name: { type: "string" } },
+        required: ["name"],
+      },
+    },
+  },
 ];
+
 
 async function findCategory(ctx: Ctx, key: string) {
   const { data } = await ctx.supabase.from("point_categories").select("*");
