@@ -4,6 +4,7 @@ import { Flame } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Panel, Meter, Stat, Chip } from "@/components/lifeos/Bits";
 import { DayPoints } from "@/components/lifeos/DayPoints";
+import { ChatPanel } from "@/components/lifeos/ChatPanel";
 import { useLifeData, useRefreshLife } from "@/hooks/useLifeData";
 import { toggleHabit } from "@/lib/mutations";
 import {
