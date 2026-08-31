@@ -135,8 +135,47 @@ export async function buildSnapshot(supabase: DB, today: string) {
   lines.push(
     `CLASSES: ${(classes.data ?? []).map((c: any) => `${c.name} (${c.meeting_times ?? "?"}, ${c.professor ?? "?"})`).join("; ") || "none"}`,
   );
+
+  // rolling 7-day windows so read-back questions use real stored data
+  const weekStart = shiftDate(today, -6);
+  const weekActs = acts.filter((a: any) => a.date >= weekStart && a.date <= today);
+  const weekByCat = cats.map((c: any) => {
+    const pts = weekActs
+      .filter((a: any) => a.category_id === c.id)
+      .reduce((s: number, a: any) => s + (a.points ?? 0), 0);
+    return `${c.label} ${pts}`;
+  });
+  lines.push(`POINTS LAST 7 DAYS (${weekStart} → ${today}): ${weekByCat.join("; ") || "none"}`);
+
+  const weekShifts = (shifts.data ?? []).filter((s: any) => s.date >= weekStart && s.date <= today);
+  lines.push(
+    `LAST 7 DAYS WORK: ${weekShifts.reduce((s: number, r: any) => s + Number(r.hours ?? 0), 0)}h, $${weekShifts
+      .reduce((s: number, r: any) => s + Number(r.earnings ?? 0), 0)
+      .toFixed(2)}`,
+  );
+
+  const { data: scores } = await supabase
+    .from("day_scores")
+    .select("date,overall_pct")
+    .order("date", { ascending: false })
+    .limit(10);
+  lines.push(
+    `RECENT DAY SCORES: ${(scores ?? []).map((s: any) => `${s.date} ${s.overall_pct}%`).join("; ") || "none"}`,
+  );
+
+  const dailyList = (daily.data ?? []) as any[];
+  let vapeStreak = 0;
+  for (let i = 0; i < 400; i++) {
+    const key = shiftDate(today, -i);
+    const row = dailyList.find((d: any) => d.date === key);
+    if (row?.vape_free) vapeStreak++;
+    else if (i > 0 || row) break;
+  }
+  lines.push(`VAPE-FREE STREAK (logged): ${vapeStreak} day(s)`);
+
   return lines.join("\n");
 }
+
 
 export const SYSTEM_PROMPT = `You are the assistant inside Logan Gilliland's personal Life OS.
 
