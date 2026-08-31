@@ -7,7 +7,6 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
-  MessageSquare,
   Target,
   Wallet,
   Boxes,
@@ -25,7 +24,6 @@ const NAV = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/school", label: "School", icon: GraduationCap },
   { to: "/stats", label: "Stats", icon: BarChart3 },
-  { to: "/chat", label: "AI", icon: MessageSquare },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
