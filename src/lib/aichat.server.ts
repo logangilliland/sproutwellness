@@ -900,7 +900,101 @@ export async function runTool(ctx: Ctx, name: string, args: any): Promise<string
       );
       return `updated ${cat.label} suggestions for ${date}`;
     }
+    case "move_points": {
+      const from = args.from_date ?? today;
+      const to = args.to_date ?? today;
+      const { data } = await sb.from("point_activities").select("id,title,points").eq("date", from);
+      let rows = (data ?? []) as any[];
+      if (args.title) {
+        rows = rows.filter((a: any) =>
+          a.title.toLowerCase().includes(String(args.title).toLowerCase()),
+        );
+      }
+      if (!rows.length) return `nothing logged on ${from}${args.title ? ` matching "${args.title}"` : ""}`;
+      await sb
+        .from("point_activities")
+        .update({ date: to })
+        .in("id", rows.map((r: any) => r.id));
+      const a = await recomputeDayScore(ctx, from);
+      const b = await recomputeDayScore(ctx, to);
+      await log(ctx, `Moved ${rows.length} activity(s) from ${from} to ${to}`);
+      return `moved ${rows.map((r: any) => `${r.title} (+${r.points})`).join(", ")} from ${from} to ${to}; ${from} is now ${a.overall}%, ${to} is now ${b.overall}%`;
+    }
+    case "manage_class": {
+      if (args.action === "create") {
+        await sb.from("classes").insert({
+          name: args.name,
+          professor: args.professor ?? null,
+          location: args.location ?? null,
+          meeting_times: args.meeting_times ?? null,
+          term: args.term ?? null,
+          notes: args.notes ?? null,
+        });
+        await log(ctx, `Class added: ${args.name}`);
+        return `added class "${args.name}"`;
+      }
+      const { data } = await sb.from("classes").select("id,name");
+      const cls = (data ?? []).find((c: any) =>
+        c.name.toLowerCase().includes(String(args.name).toLowerCase()),
+      );
+      if (!cls) return `no class matching "${args.name}"`;
+      if (args.action === "delete") {
+        await sb.from("classes").delete().eq("id", cls.id);
+        await log(ctx, `Class removed: ${cls.name}`);
+        return `removed class "${cls.name}"`;
+      }
+      const patch: any = {};
+      for (const k of ["professor", "location", "meeting_times", "term", "notes"]) {
+        if (args[k] !== undefined) patch[k] = args[k];
+      }
+      await sb.from("classes").update(patch).eq("id", cls.id);
+      await log(ctx, `Class updated: ${cls.name}`, JSON.stringify(patch));
+      return `updated class "${cls.name}"`;
+    }
+    case "delete_money_entry": {
+      const date = args.date ?? today;
+      if (args.kind === "shift") {
+        const { data } = await sb.from("work_shifts").select("id,earnings,hours").eq("date", date);
+        let rows = (data ?? []) as any[];
+        if (args.amount !== undefined)
+          rows = rows.filter((r: any) => Number(r.earnings) === Number(args.amount));
+        if (!rows.length) return `no shift on ${date}`;
+        await sb.from("work_shifts").delete().eq("id", rows[0].id);
+        await log(ctx, `Shift deleted on ${date}`);
+        return `deleted the ${rows[0].hours}h / $${rows[0].earnings} shift on ${date}`;
+      }
+      const { data } = await sb.from("transactions").select("id,amount,kind").eq("date", date);
+      let rows = (data ?? []) as any[];
+      if (args.amount !== undefined)
+        rows = rows.filter((r: any) => Number(r.amount) === Number(args.amount));
+      if (!rows.length) return `no transaction on ${date}`;
+      await sb.from("transactions").delete().eq("id", rows[0].id);
+      await log(ctx, `Transaction deleted on ${date}`);
+      return `deleted the $${rows[0].amount} ${rows[0].kind} on ${date}`;
+    }
+    case "delete_task": {
+      const { data } = await sb.from("tasks").select("id,title");
+      const t = (data ?? []).find((x: any) =>
+        x.title.toLowerCase().includes(String(args.title).toLowerCase()),
+      );
+      if (!t) return `no task matching "${args.title}"`;
+      await sb.from("tasks").delete().eq("id", t.id);
+      await log(ctx, `Task deleted: ${t.title}`);
+      return `deleted task "${t.title}"`;
+    }
+    case "delete_project": {
+      const { data } = await sb.from("projects").select("id,name");
+      const p = (data ?? []).find((x: any) =>
+        x.name.toLowerCase().includes(String(args.name).toLowerCase()),
+      );
+      if (!p) return `no project matching "${args.name}"`;
+      await sb.from("tasks").delete().eq("project_id", p.id);
+      await sb.from("projects").delete().eq("id", p.id);
+      await log(ctx, `Project deleted: ${p.name}`);
+      return `deleted project "${p.name}"`;
+    }
     default:
+
       return `unknown tool ${name}`;
   }
 }
