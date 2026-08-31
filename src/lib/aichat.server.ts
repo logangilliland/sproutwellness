@@ -611,7 +611,8 @@ async function recomputeDayScore(ctx: Ctx, date: string) {
 }
 
 export async function runTool(ctx: Ctx, name: string, args: any): Promise<string> {
-  const today = todayKey();
+  const today = ctx.today;
+
   const sb = ctx.supabase;
 
   switch (name) {
