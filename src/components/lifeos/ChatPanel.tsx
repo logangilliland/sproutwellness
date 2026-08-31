@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Send } from "lucide-react";
 import { Panel } from "@/components/lifeos/Bits";
 import { useRefreshLife } from "@/hooks/useLifeData";
+import { todayKey } from "@/lib/lifeos";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +47,14 @@ export function ChatPanel() {
     setInput("");
     setBusy(true);
     try {
-      await send({ data: { message } });
+      await send({
+        data: {
+          message,
+          localDate: todayKey(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      });
+
       await refetch();
       refresh();
     } catch (err) {

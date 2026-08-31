@@ -4,13 +4,37 @@ import { computeBreakdown, SUGGESTION_CATALOG } from "@/lib/points";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DB = SupabaseClient<any, any, any>;
 
-function todayKey() {
+function isDateKey(v: unknown): v is string {
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
+export function resolveToday(localDate?: string | null, timeZone?: string | null) {
+  if (isDateKey(localDate)) return localDate;
+  try {
+    if (timeZone) {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+    }
+  } catch {
+    /* fall through */
+  }
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export async function buildSnapshot(supabase: DB) {
-  const today = todayKey();
+function shiftDate(key: string, days: number) {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y!, (m ?? 1) - 1, d ?? 1));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+export async function buildSnapshot(supabase: DB, today: string) {
+
   const [habits, logs, tasks, projects, goals, events, accounts, shifts, txns, daily, classes] =
     await Promise.all([
       supabase.from("habits").select("id,name,category,active,frequency,target_per_week"),
@@ -111,8 +135,47 @@ export async function buildSnapshot(supabase: DB) {
   lines.push(
     `CLASSES: ${(classes.data ?? []).map((c: any) => `${c.name} (${c.meeting_times ?? "?"}, ${c.professor ?? "?"})`).join("; ") || "none"}`,
   );
+
+  // rolling 7-day windows so read-back questions use real stored data
+  const weekStart = shiftDate(today, -6);
+  const weekActs = acts.filter((a: any) => a.date >= weekStart && a.date <= today);
+  const weekByCat = cats.map((c: any) => {
+    const pts = weekActs
+      .filter((a: any) => a.category_id === c.id)
+      .reduce((s: number, a: any) => s + (a.points ?? 0), 0);
+    return `${c.label} ${pts}`;
+  });
+  lines.push(`POINTS LAST 7 DAYS (${weekStart} → ${today}): ${weekByCat.join("; ") || "none"}`);
+
+  const weekShifts = (shifts.data ?? []).filter((s: any) => s.date >= weekStart && s.date <= today);
+  lines.push(
+    `LAST 7 DAYS WORK: ${weekShifts.reduce((s: number, r: any) => s + Number(r.hours ?? 0), 0)}h, $${weekShifts
+      .reduce((s: number, r: any) => s + Number(r.earnings ?? 0), 0)
+      .toFixed(2)}`,
+  );
+
+  const { data: scores } = await supabase
+    .from("day_scores")
+    .select("date,overall_pct")
+    .order("date", { ascending: false })
+    .limit(10);
+  lines.push(
+    `RECENT DAY SCORES: ${(scores ?? []).map((s: any) => `${s.date} ${s.overall_pct}%`).join("; ") || "none"}`,
+  );
+
+  const dailyList = (daily.data ?? []) as any[];
+  let vapeStreak = 0;
+  for (let i = 0; i < 400; i++) {
+    const key = shiftDate(today, -i);
+    const row = dailyList.find((d: any) => d.date === key);
+    if (row?.vape_free) vapeStreak++;
+    else if (i > 0 || row) break;
+  }
+  lines.push(`VAPE-FREE STREAK (logged): ${vapeStreak} day(s)`);
+
   return lines.join("\n");
 }
+
 
 export const SYSTEM_PROMPT = `You are the assistant inside Logan Gilliland's personal Life OS.
 
@@ -139,9 +202,20 @@ DAILY CATEGORY POINT SYSTEM (this is the core of the app — not a checklist):
 - Use manage_suggestions to refresh or swap the day's suggested activities based on his goals, deadlines and what he has already done. Keep them short and doable.
 - Use set_category_target only when he asks to change the difficulty.
 
-- Use adaptive planning: if he keeps failing a big task, suggest a smaller version. If he crushes a goal, suggest raising it. If a deadline is close, raise its priority.`;
+- Use adaptive planning: if he keeps failing a big task, suggest a smaller version. If he crushes a goal, suggest raising it. If a deadline is close, raise its priority.
 
-type Ctx = { supabase: DB };
+DATES — BE EXACT, THIS HAS BEEN WRONG BEFORE:
+- "TODAY" in CURRENT STATE is Logan's real local date. It is the ONLY definition of today. Never use your own idea of the date.
+- Resolve relative words against that date: "today" = TODAY, "yesterday" = TODAY minus 1, "tomorrow" = TODAY plus 1, "last night" = TODAY (unless he says it was after midnight). Late-evening messages are still TODAY.
+- Pass an explicit YYYY-MM-DD date to every tool that takes one. Do not rely on defaults.
+- If a date is genuinely ambiguous, ask one short question instead of guessing.
+- Always name the date in your reply for anything you logged, e.g. "Fitness +20 for Aug 30".
+- If he says something landed on the wrong day, use move_points to re-date it; both days get rescored.
+
+CAPABILITY: you can change anything in this app — points, targets, categories, suggestions, habits, tasks, projects, goals, events/deadlines, classes, work shifts, transactions, account balances, daily logs. If he asks for something, do it with tools rather than telling him to click around. Answer stats questions only from CURRENT STATE or tool results; if a number isn't stored, say so and offer to record it.`;
+
+type Ctx = { supabase: DB; today: string };
+
 
 async function log(ctx: Ctx, summary: string, detail?: string) {
   await ctx.supabase.from("change_log").insert({ summary, detail: detail ?? null });
@@ -427,7 +501,85 @@ export const TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "move_points",
+      description:
+        "Re-date logged activities that landed on the wrong day. Moves matching activities from one date to another and rescores both days.",
+      parameters: {
+        type: "object",
+        properties: {
+          from_date: { type: "string", description: "YYYY-MM-DD the activity is currently on" },
+          to_date: { type: "string", description: "YYYY-MM-DD it should be on" },
+          title: { type: "string", description: "Fuzzy title match; omit to move every activity on from_date" },
+        },
+        required: ["from_date", "to_date"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "manage_class",
+      description: "Add, update or remove a class in the school schedule.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: { type: "string", enum: ["create", "update", "delete"] },
+          name: { type: "string" },
+          professor: { type: "string" },
+          location: { type: "string" },
+          meeting_times: { type: "string" },
+          term: { type: "string" },
+          notes: { type: "string" },
+        },
+        required: ["action", "name"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_money_entry",
+      description: "Delete a wrong work shift or transaction.",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: { type: "string", enum: ["shift", "transaction"] },
+          date: { type: "string" },
+          amount: { type: "number", description: "Earnings for a shift, amount for a transaction" },
+        },
+        required: ["kind", "date"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_task",
+      description: "Delete a task by fuzzy title match.",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" } },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_project",
+      description: "Delete a project and its steps.",
+      parameters: {
+        type: "object",
+        properties: { name: { type: "string" } },
+        required: ["name"],
+      },
+    },
+  },
 ];
+
 
 async function findCategory(ctx: Ctx, key: string) {
   const { data } = await ctx.supabase.from("point_categories").select("*");
@@ -459,7 +611,8 @@ async function recomputeDayScore(ctx: Ctx, date: string) {
 }
 
 export async function runTool(ctx: Ctx, name: string, args: any): Promise<string> {
-  const today = todayKey();
+  const today = ctx.today;
+
   const sb = ctx.supabase;
 
   switch (name) {
@@ -747,12 +900,111 @@ export async function runTool(ctx: Ctx, name: string, args: any): Promise<string
       );
       return `updated ${cat.label} suggestions for ${date}`;
     }
+    case "move_points": {
+      const from = args.from_date ?? today;
+      const to = args.to_date ?? today;
+      const { data } = await sb.from("point_activities").select("id,title,points").eq("date", from);
+      let rows = (data ?? []) as any[];
+      if (args.title) {
+        rows = rows.filter((a: any) =>
+          a.title.toLowerCase().includes(String(args.title).toLowerCase()),
+        );
+      }
+      if (!rows.length) return `nothing logged on ${from}${args.title ? ` matching "${args.title}"` : ""}`;
+      await sb
+        .from("point_activities")
+        .update({ date: to })
+        .in("id", rows.map((r: any) => r.id));
+      const a = await recomputeDayScore(ctx, from);
+      const b = await recomputeDayScore(ctx, to);
+      await log(ctx, `Moved ${rows.length} activity(s) from ${from} to ${to}`);
+      return `moved ${rows.map((r: any) => `${r.title} (+${r.points})`).join(", ")} from ${from} to ${to}; ${from} is now ${a.overall}%, ${to} is now ${b.overall}%`;
+    }
+    case "manage_class": {
+      if (args.action === "create") {
+        await sb.from("classes").insert({
+          name: args.name,
+          professor: args.professor ?? null,
+          location: args.location ?? null,
+          meeting_times: args.meeting_times ?? null,
+          term: args.term ?? null,
+          notes: args.notes ?? null,
+        });
+        await log(ctx, `Class added: ${args.name}`);
+        return `added class "${args.name}"`;
+      }
+      const { data } = await sb.from("classes").select("id,name");
+      const cls = (data ?? []).find((c: any) =>
+        c.name.toLowerCase().includes(String(args.name).toLowerCase()),
+      );
+      if (!cls) return `no class matching "${args.name}"`;
+      if (args.action === "delete") {
+        await sb.from("classes").delete().eq("id", cls.id);
+        await log(ctx, `Class removed: ${cls.name}`);
+        return `removed class "${cls.name}"`;
+      }
+      const patch: any = {};
+      for (const k of ["professor", "location", "meeting_times", "term", "notes"]) {
+        if (args[k] !== undefined) patch[k] = args[k];
+      }
+      await sb.from("classes").update(patch).eq("id", cls.id);
+      await log(ctx, `Class updated: ${cls.name}`, JSON.stringify(patch));
+      return `updated class "${cls.name}"`;
+    }
+    case "delete_money_entry": {
+      const date = args.date ?? today;
+      if (args.kind === "shift") {
+        const { data } = await sb.from("work_shifts").select("id,earnings,hours").eq("date", date);
+        let rows = (data ?? []) as any[];
+        if (args.amount !== undefined)
+          rows = rows.filter((r: any) => Number(r.earnings) === Number(args.amount));
+        if (!rows.length) return `no shift on ${date}`;
+        await sb.from("work_shifts").delete().eq("id", rows[0].id);
+        await log(ctx, `Shift deleted on ${date}`);
+        return `deleted the ${rows[0].hours}h / $${rows[0].earnings} shift on ${date}`;
+      }
+      const { data } = await sb.from("transactions").select("id,amount,kind").eq("date", date);
+      let rows = (data ?? []) as any[];
+      if (args.amount !== undefined)
+        rows = rows.filter((r: any) => Number(r.amount) === Number(args.amount));
+      if (!rows.length) return `no transaction on ${date}`;
+      await sb.from("transactions").delete().eq("id", rows[0].id);
+      await log(ctx, `Transaction deleted on ${date}`);
+      return `deleted the $${rows[0].amount} ${rows[0].kind} on ${date}`;
+    }
+    case "delete_task": {
+      const { data } = await sb.from("tasks").select("id,title");
+      const t = (data ?? []).find((x: any) =>
+        x.title.toLowerCase().includes(String(args.title).toLowerCase()),
+      );
+      if (!t) return `no task matching "${args.title}"`;
+      await sb.from("tasks").delete().eq("id", t.id);
+      await log(ctx, `Task deleted: ${t.title}`);
+      return `deleted task "${t.title}"`;
+    }
+    case "delete_project": {
+      const { data } = await sb.from("projects").select("id,name");
+      const p = (data ?? []).find((x: any) =>
+        x.name.toLowerCase().includes(String(args.name).toLowerCase()),
+      );
+      if (!p) return `no project matching "${args.name}"`;
+      await sb.from("tasks").delete().eq("project_id", p.id);
+      await sb.from("projects").delete().eq("id", p.id);
+      await log(ctx, `Project deleted: ${p.name}`);
+      return `deleted project "${p.name}"`;
+    }
     default:
+
       return `unknown tool ${name}`;
   }
 }
 
-export async function chatWithTools(supabase: DB, userMessage: string) {
+export async function chatWithTools(
+  supabase: DB,
+  userMessage: string,
+  opts?: { localDate?: string | null; timeZone?: string | null },
+) {
+  const today = resolveToday(opts?.localDate, opts?.timeZone);
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured yet.");
 
@@ -762,7 +1014,8 @@ export async function chatWithTools(supabase: DB, userMessage: string) {
     .order("created_at", { ascending: false })
     .limit(16);
 
-  const snapshot = await buildSnapshot(supabase);
+  const snapshot = await buildSnapshot(supabase, today);
+
 
   const messages: any[] = [
     { role: "system", content: `${SYSTEM_PROMPT}\n\nCURRENT STATE:\n${snapshot}` },
@@ -816,7 +1069,7 @@ export async function chatWithTools(supabase: DB, userMessage: string) {
       } catch {
         args = {};
       }
-      const result = await runTool({ supabase }, call.function.name, args);
+      const result = await runTool({ supabase, today }, call.function.name, args);
       actions.push(result);
       messages.push({ role: "tool", tool_call_id: call.id, content: result });
     }
