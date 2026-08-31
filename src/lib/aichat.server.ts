@@ -1069,7 +1069,7 @@ export async function chatWithTools(
       } catch {
         args = {};
       }
-      const result = await runTool({ supabase }, call.function.name, args);
+      const result = await runTool({ supabase, today }, call.function.name, args);
       actions.push(result);
       messages.push({ role: "tool", tool_call_id: call.id, content: result });
     }
