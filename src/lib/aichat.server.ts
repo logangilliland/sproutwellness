@@ -202,9 +202,20 @@ DAILY CATEGORY POINT SYSTEM (this is the core of the app — not a checklist):
 - Use manage_suggestions to refresh or swap the day's suggested activities based on his goals, deadlines and what he has already done. Keep them short and doable.
 - Use set_category_target only when he asks to change the difficulty.
 
-- Use adaptive planning: if he keeps failing a big task, suggest a smaller version. If he crushes a goal, suggest raising it. If a deadline is close, raise its priority.`;
+- Use adaptive planning: if he keeps failing a big task, suggest a smaller version. If he crushes a goal, suggest raising it. If a deadline is close, raise its priority.
 
-type Ctx = { supabase: DB };
+DATES — BE EXACT, THIS HAS BEEN WRONG BEFORE:
+- "TODAY" in CURRENT STATE is Logan's real local date. It is the ONLY definition of today. Never use your own idea of the date.
+- Resolve relative words against that date: "today" = TODAY, "yesterday" = TODAY minus 1, "tomorrow" = TODAY plus 1, "last night" = TODAY (unless he says it was after midnight). Late-evening messages are still TODAY.
+- Pass an explicit YYYY-MM-DD date to every tool that takes one. Do not rely on defaults.
+- If a date is genuinely ambiguous, ask one short question instead of guessing.
+- Always name the date in your reply for anything you logged, e.g. "Fitness +20 for Aug 30".
+- If he says something landed on the wrong day, use move_points to re-date it; both days get rescored.
+
+CAPABILITY: you can change anything in this app — points, targets, categories, suggestions, habits, tasks, projects, goals, events/deadlines, classes, work shifts, transactions, account balances, daily logs. If he asks for something, do it with tools rather than telling him to click around. Answer stats questions only from CURRENT STATE or tool results; if a number isn't stored, say so and offer to record it.`;
+
+type Ctx = { supabase: DB; today: string };
+
 
 async function log(ctx: Ctx, summary: string, detail?: string) {
   await ctx.supabase.from("change_log").insert({ summary, detail: detail ?? null });
