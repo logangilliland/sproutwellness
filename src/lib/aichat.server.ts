@@ -4,13 +4,37 @@ import { computeBreakdown, SUGGESTION_CATALOG } from "@/lib/points";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DB = SupabaseClient<any, any, any>;
 
-function todayKey() {
+function isDateKey(v: unknown): v is string {
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
+export function resolveToday(localDate?: string | null, timeZone?: string | null) {
+  if (isDateKey(localDate)) return localDate;
+  try {
+    if (timeZone) {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+    }
+  } catch {
+    /* fall through */
+  }
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export async function buildSnapshot(supabase: DB) {
-  const today = todayKey();
+function shiftDate(key: string, days: number) {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(Date.UTC(y!, (m ?? 1) - 1, d ?? 1));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+export async function buildSnapshot(supabase: DB, today: string) {
+
   const [habits, logs, tasks, projects, goals, events, accounts, shifts, txns, daily, classes] =
     await Promise.all([
       supabase.from("habits").select("id,name,category,active,frequency,target_per_week"),
