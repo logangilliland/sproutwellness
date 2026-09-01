@@ -23,7 +23,7 @@ export function ChatPanel() {
   const refresh = useRefreshLife();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ["chat-messages"],
@@ -38,7 +38,9 @@ export function ChatPanel() {
   });
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesRef.current;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
   }, [messages.length, busy]);
 
   async function submit(text: string) {
@@ -72,7 +74,7 @@ export function ChatPanel() {
       <p className="-mt-1 mb-3 text-xs text-muted-foreground">
         Tell it what happened — it updates your points, money, goals and calendar.
       </p>
-      <div className="max-h-80 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div ref={messagesRef} className="max-h-80 flex-1 space-y-3 overflow-y-auto pr-1">
         {messages.length === 0 && (
           <div className="space-y-2 text-sm text-muted-foreground">
             <p>Try one of these:</p>
@@ -104,7 +106,6 @@ export function ChatPanel() {
             thinking…
           </div>
         )}
-        <div ref={endRef} />
       </div>
 
       <form
