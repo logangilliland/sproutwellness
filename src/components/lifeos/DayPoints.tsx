@@ -66,12 +66,14 @@ export function DayPoints({
       <Panel
         title="Today"
         action={
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowSettings((v) => !v)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs text-muted-foreground hover:text-foreground"
           >
             <Settings2 className="size-3.5" /> Targets
-          </button>
+          </Button>
         }
       >
         <div className="flex flex-wrap items-center gap-5">
@@ -104,7 +106,7 @@ export function DayPoints({
           <div className="mt-4 space-y-3 rounded-lg border border-border bg-surface/40 p-3">
             <div className="flex flex-wrap items-end gap-2">
               <div>
-                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                <label className="text-[10px] uppercase text-muted-foreground">
                   Daily target (all categories)
                 </label>
                 <Input
@@ -175,7 +177,8 @@ export function DayPoints({
 
       <div className="grid gap-4 sm:grid-cols-2">
         {active.map((cat) => {
-          const b = breakdown.find((x) => x.key === cat.key)!;
+          const b = breakdown.find((x) => x.key === cat.key);
+          if (!b) return null;
           const logged = activities.filter((a) => a.date === date && a.category_id === cat.id);
           const sugg = suggestions
             .filter((s) => s.date === date && s.category_id === cat.id)
@@ -184,7 +187,7 @@ export function DayPoints({
           return (
             <Panel key={cat.id}>
               <div className="flex items-baseline justify-between">
-                <h3 className="font-display text-sm font-bold uppercase tracking-widest">
+                <h3 className="font-display text-sm font-bold uppercase">
                   {cat.emoji} {cat.label}
                 </h3>
                 <span className="stat-number text-lg">
@@ -208,16 +211,18 @@ export function DayPoints({
                         {a.title}
                       </span>
                       <span className="font-mono text-xs text-primary">+{a.points}</span>
-                      <button
+                       <Button
+                         variant="ghost"
+                         size="icon"
                         aria-label="Remove activity"
-                        className="opacity-0 transition-opacity group-hover:opacity-100"
+                         className="size-8 opacity-70 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
                         onClick={async () => {
                           await deleteActivity(a.id);
                           refresh();
                         }}
-                      >
+                       >
                         <Trash2 className="size-3.5 text-muted-foreground hover:text-destructive" />
-                      </button>
+                       </Button>
                     </li>
                   ))}
                 </ul>
@@ -225,18 +230,21 @@ export function DayPoints({
 
               {b.points < b.target && sugg.length > 0 && (
                 <div className="mt-3">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                   <p className="text-[10px] uppercase text-muted-foreground">
                     Suggested
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {sugg.map((s) => (
-                      <button
+                      <Button
                         key={s.id}
+                        type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() => log(cat, s.title, s.points, "Suggested activity")}
-                        className="rounded-full border border-border bg-surface/50 px-2.5 py-1 text-xs hover:border-primary/60"
+                        className="h-8 rounded-full px-2.5 text-xs"
                       >
                         {s.title} <span className="font-mono text-primary">+{s.points}</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>

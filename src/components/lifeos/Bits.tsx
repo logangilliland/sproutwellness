@@ -16,7 +16,7 @@ export function Panel({
     <section className={cn("panel p-4 sm:p-5", className)}>
       {(title || action) && (
         <header className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="font-display text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="font-display text-xs font-bold uppercase text-muted-foreground">
             {title}
           </h2>
           {action}
@@ -58,8 +58,8 @@ export function Ring({ value, label }: { value: number; label?: string }) {
   const r = 46;
   const c = 2 * Math.PI * r;
   return (
-    <div className="relative grid size-32 place-items-center">
-      <svg viewBox="0 0 110 110" className="size-32 -rotate-90">
+    <div className="relative grid size-32 place-items-center rounded-full bg-primary/5 shadow-[0_0_40px_var(--color-primary)]/10">
+      <svg viewBox="0 0 110 110" className="size-32 -rotate-90" aria-hidden="true">
         <circle cx="55" cy="55" r={r} className="fill-none stroke-muted" strokeWidth="9" />
         <circle
           cx="55"
@@ -75,7 +75,7 @@ export function Ring({ value, label }: { value: number; label?: string }) {
       <div className="absolute text-center">
         <div className="stat-number text-3xl">{Math.round(value)}</div>
         {label && (
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+          <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
         )}
       </div>
     </div>
@@ -95,7 +95,7 @@ export function Stat({
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface/50 p-3">
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+       <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
       <div className={cn("stat-number mt-1 text-2xl", tone)}>{value}</div>
       {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
     </div>
@@ -104,9 +104,9 @@ export function Stat({
 
 export function Chip({ children, tone }: { children: ReactNode; tone?: string }) {
   return (
-    <span
+      <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs text-muted-foreground",
+        "inline-flex items-center gap-1 rounded-full border border-border bg-surface/70 px-2.5 py-1 text-xs text-muted-foreground shadow-sm",
         tone,
       )}
     >
