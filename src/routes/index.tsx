@@ -4,6 +4,8 @@ import { Flame } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Panel, Meter, Stat, Chip } from "@/components/lifeos/Bits";
 import { DayPoints } from "@/components/lifeos/DayPoints";
+import { TodayPlant } from "@/components/garden/TodayPlant";
+import { computeBreakdown } from "@/lib/points";
 import { ChatPanel } from "@/components/lifeos/ChatPanel";
 import { useLifeData, useRefreshLife } from "@/hooks/useLifeData";
 import { toggleHabit } from "@/lib/mutations";
@@ -65,7 +67,8 @@ function Today() {
     const ls = lifeScore(data);
     const milestone = nextMilestone(data.events);
     const vape = streak(new Set(vapeFreeDates(data)));
-    return { ls, milestone, vape };
+    const pts = computeBreakdown(data.categories, data.activities, todayKey());
+    return { ls, milestone, vape, pts };
   }, [data]);
 
   if (isLoading || !data || !computed) {
@@ -100,6 +103,14 @@ function Today() {
           <Chip>💰 {money(earned)} earned this week</Chip>
         </div>
       </div>
+
+      <TodayPlant
+        date={today}
+        overall={computed.pts.overall}
+        breakdown={computed.pts.breakdown}
+        plants={data.plants}
+        refresh={refresh}
+      />
 
       <DayPoints
         date={today}
