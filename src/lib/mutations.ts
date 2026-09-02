@@ -154,3 +154,43 @@ export async function saveDayScore(
     { onConflict: "user_id,date" },
   );
 }
+
+/* ---------- garden ---------- */
+
+export async function upsertGardenPlant(input: {
+  date: string;
+  species_key: string;
+  rarity: string;
+  stage: number;
+  overall_pct: number;
+  perfect: boolean;
+  breakdown: CategoryBreakdown[];
+}) {
+  await supabase.from("garden_plants").upsert(
+    {
+      date: input.date,
+      species_key: input.species_key,
+      rarity: input.rarity,
+      stage: input.stage,
+      overall_pct: input.overall_pct,
+      perfect: input.perfect,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      breakdown: input.breakdown as any,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,date" },
+  );
+}
+
+/** Past days are frozen exactly as they finished. */
+export async function lockPastPlants(today: string) {
+  await supabase
+    .from("garden_plants")
+    .update({ locked: true })
+    .lt("date", today)
+    .eq("locked", false);
+}
+
+export async function setPlantFavorite(id: string, favorite: boolean) {
+  await supabase.from("garden_plants").update({ favorite }).eq("id", id);
+}
