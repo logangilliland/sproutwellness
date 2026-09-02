@@ -10,6 +10,7 @@ import {
   Target,
   Wallet,
   Boxes,
+  Sprout,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 
 const NAV = [
   { to: "/", label: "Today", icon: LayoutDashboard },
+  { to: "/garden", label: "Garden", icon: Sprout },
   { to: "/habits", label: "Habits", icon: CheckCircle2 },
   { to: "/money", label: "Money", icon: Wallet },
   { to: "/goals", label: "Goals", icon: Target },

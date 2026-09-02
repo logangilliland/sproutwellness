@@ -9,26 +9,30 @@ import type {
   PointSuggestion,
 } from "@/lib/points";
 import { ensureCategories, ensureSuggestions } from "@/lib/mutations";
+import type { GardenPlant } from "@/lib/garden";
 
 export type FullData = LifeData & {
   categories: PointCategory[];
   activities: PointActivity[];
   suggestions: PointSuggestion[];
   dayScores: DayScoreRow[];
+  plants: GardenPlant[];
 };
 
 async function fetchPoints() {
-  const [cats, acts, sugg, scores] = await Promise.all([
+  const [cats, acts, sugg, scores, plants] = await Promise.all([
     supabase.from("point_categories").select("*").order("sort_order"),
     supabase.from("point_activities").select("*").order("created_at", { ascending: false }),
     supabase.from("point_suggestions").select("*").order("sort_order"),
     supabase.from("day_scores").select("id,date,overall_pct,breakdown").order("date", { ascending: false }),
+    supabase.from("garden_plants").select("*").order("date", { ascending: false }),
   ]);
   return {
     categories: (cats.data ?? []) as unknown as PointCategory[],
     activities: (acts.data ?? []) as unknown as PointActivity[],
     suggestions: (sugg.data ?? []) as unknown as PointSuggestion[],
     dayScores: (scores.data ?? []) as unknown as DayScoreRow[],
+    plants: (plants.data ?? []) as unknown as GardenPlant[],
   };
 }
 

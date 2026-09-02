@@ -239,6 +239,54 @@ export type Database = {
         }
         Relationships: []
       }
+      garden_plants: {
+        Row: {
+          breakdown: Json
+          created_at: string
+          date: string
+          favorite: boolean
+          id: string
+          locked: boolean
+          overall_pct: number
+          perfect: boolean
+          rarity: string
+          species_key: string
+          stage: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          breakdown?: Json
+          created_at?: string
+          date: string
+          favorite?: boolean
+          id?: string
+          locked?: boolean
+          overall_pct?: number
+          perfect?: boolean
+          rarity: string
+          species_key: string
+          stage?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          breakdown?: Json
+          created_at?: string
+          date?: string
+          favorite?: boolean
+          id?: string
+          locked?: boolean
+          overall_pct?: number
+          perfect?: boolean
+          rarity?: string
+          species_key?: string
+          stage?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           category: string
