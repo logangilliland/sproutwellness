@@ -24,7 +24,7 @@ export function PlantArt({
   const s = Math.min(6, Math.max(1, stage));
   const perfect = s === 6;
 
-  const stemTop = [138, 120, 100, 82, 64, 56][s - 1];
+  const stemTop = [138, 120, 100, 82, 64, 56][s - 1] ?? 100;
   const headScale = s <= 3 ? 0 : s === 4 ? 0.55 : s === 5 ? 1 : 1.12;
   const petal = silhouette ? "#26382C" : species.petal;
   const petal2 = silhouette ? "#1E2E23" : species.petal2;

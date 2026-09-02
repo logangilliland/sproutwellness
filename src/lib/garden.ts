@@ -113,7 +113,7 @@ export const SPECIES_BY_KEY: Record<string, Species> = Object.fromEntries(
 );
 
 export function speciesFor(key: string): Species {
-  return SPECIES_BY_KEY[key] ?? SPECIES[0];
+  return SPECIES_BY_KEY[key] ?? SPECIES[0]!;
 }
 
 /** Deterministic hash so a given day always yields the same seed. */
@@ -141,7 +141,7 @@ export function seedForDate(date: string, salt = ""): Species {
   }
   const pool = SPECIES.filter((s) => s.rarity === rarity);
   const pick = Math.floor(hash(`${salt}|${date}|species`) * pool.length);
-  return pool[Math.min(pick, pool.length - 1)];
+  return pool[Math.min(pick, pool.length - 1)] ?? SPECIES[0]!;
 }
 
 /** Growth stage 1-6 from the day's overall percentage. */
@@ -156,7 +156,7 @@ export function stageForPct(pct: number): number {
 
 export function stageLabel(stage: number, species: Species): string {
   if (stage >= 6) return species.perfectName;
-  return STAGE_NAMES[Math.max(0, stage - 1)];
+  return STAGE_NAMES[Math.max(0, stage - 1)] ?? "Seed";
 }
 
 export const GARDEN_STAGES = [
@@ -187,12 +187,12 @@ export function gardenStage(plants: GardenPlant[]) {
   return {
     index: idx,
     level: idx + 1,
-    name: GARDEN_STAGES[idx].name,
+    name: GARDEN_STAGES[idx]!.name,
     points: pts,
     next: next ? next.name : null,
     nextAt: next ? next.min : null,
     pct: next
-      ? Math.min(100, Math.round(((pts - GARDEN_STAGES[idx].min) / (next.min - GARDEN_STAGES[idx].min)) * 100))
+      ? Math.min(100, Math.round(((pts - GARDEN_STAGES[idx]!.min) / (next.min - GARDEN_STAGES[idx]!.min)) * 100))
       : 100,
   };
 }
