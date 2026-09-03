@@ -18,7 +18,7 @@ export const Route = createFileRoute("/projects")({
       {
         name: "description",
         content:
-          "Multi-step projects like the Delta Chi room move, with task lists, progress percentage, deadlines and priority.",
+          "Multi-step projects with task lists, progress percentage, deadlines and priority.",
       },
       { property: "og:title", content: "Projects — Sprout" },
       {

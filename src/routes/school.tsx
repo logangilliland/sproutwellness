@@ -17,7 +17,7 @@ export const Route = createFileRoute("/school")({
       {
         name: "description",
         content:
-          "Oregon State forestry classes, professors, meeting times, exams and assignment deadlines feeding into daily planning.",
+          "Classes, professors, meeting times, exams and assignment deadlines. Under construction.",
       },
       { property: "og:title", content: "School — Sprout" },
       {
@@ -67,7 +67,7 @@ function School() {
       <div>
         <h1 className="font-display text-2xl font-bold">School</h1>
         <p className="text-sm text-muted-foreground">
-          Oregon State University · Forestry · Delta Chi
+          School — under construction
         </p>
       </div>
 

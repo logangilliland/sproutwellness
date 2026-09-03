@@ -85,7 +85,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "A private personal life operating system: habits, tasks, money, fitness, goals and an AI assistant that adapts as life changes.",
       },
-      { name: "author", content: "Logan Gilliland" },
       { property: "og:title", content: "Sprout" },
       {
         property: "og:description",
