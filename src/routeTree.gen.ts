@@ -16,6 +16,7 @@ import { Route as GardenRouteImport } from './routes/garden'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as HabitsRouteImport } from './routes/habits'
 import { Route as MoneyRouteImport } from './routes/money'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as StatsRouteImport } from './routes/stats'
@@ -55,6 +56,11 @@ const MoneyRoute = MoneyRouteImport.update({
   path: '/money',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsRoute = ProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
   '/stats': typeof StatsRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
   '/stats': typeof StatsRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
   '/stats': typeof StatsRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/habits'
     | '/money'
+    | '/onboarding'
     | '/projects'
     | '/school'
     | '/stats'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/habits'
     | '/money'
+    | '/onboarding'
     | '/projects'
     | '/school'
     | '/stats'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/habits'
     | '/money'
+    | '/onboarding'
     | '/projects'
     | '/school'
     | '/stats'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   HabitsRoute: typeof HabitsRoute
   MoneyRoute: typeof MoneyRoute
+  OnboardingRoute: typeof OnboardingRoute
   ProjectsRoute: typeof ProjectsRoute
   SchoolRoute: typeof SchoolRoute
   StatsRoute: typeof StatsRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoneyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects': {
       id: '/projects'
       path: '/projects'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsRoute: GoalsRoute,
   HabitsRoute: HabitsRoute,
   MoneyRoute: MoneyRoute,
+  OnboardingRoute: OnboardingRoute,
   ProjectsRoute: ProjectsRoute,
   SchoolRoute: SchoolRoute,
   StatsRoute: StatsRoute,
