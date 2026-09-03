@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.reset_sprout() FROM anon;
