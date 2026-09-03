@@ -86,6 +86,12 @@ function Today() {
   const checking = data.accounts.find((a) => a.kind === "checking");
   const savings = data.accounts.find((a) => a.is_savings);
   const cash = data.accounts.find((a) => a.kind === "cash");
+  const settings = profile?.settings;
+  const show = (key: Parameters<typeof sectionOn>[1]) => !settings || sectionOn(settings, key);
+  const allHours = data.shifts.reduce((s, x) => s + Number(x.hours), 0);
+  const allEarned = data.shifts.reduce((s, x) => s + Number(x.earnings), 0);
+  const primaryJob = data.jobs.find((j) => j.is_primary) ?? data.jobs[0];
+  const rate = allHours ? allEarned / allHours : Number(primaryJob?.pay_rate ?? 0);
 
 
   return (
@@ -103,7 +109,7 @@ function Today() {
             <Flame className="size-3 text-primary" /> {computed.pts.overall}% today
           </Chip>
           <Chip>🏃 {exerciseThisWeek(data)} activities this week</Chip>
-          <Chip>💰 {money(earned)} earned this week</Chip>
+          {show("money") && <Chip>💰 {money(earned)} earned this week</Chip>}
         </div>
       </div>
 
@@ -173,9 +179,8 @@ function Today() {
         </Panel>
       </div>
 
+      {show("habits") && habits.length > 0 && (
       <div className="grid gap-4">
-
-
         <Panel
           title="Habit check-in"
           action={
@@ -209,8 +214,10 @@ function Today() {
           </div>
         </Panel>
       </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {show("money") && (
         <Panel title="Money">
           <div className="space-y-2 text-sm">
             <Row label="Checking" value={money(Number(checking?.balance ?? 0))} />
@@ -232,16 +239,15 @@ function Today() {
                 value={(earned / Math.max(1, Number(moneyGoal.target_value ?? 1))) * 100}
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                {money(Math.max(0, Number(moneyGoal.target_value ?? 0) - earned))} to go · ~
-                {Math.max(
-                  0,
-                  (Number(moneyGoal.target_value ?? 0) - earned) / 21,
-                ).toFixed(1)}{" "}
-                hours at $21/hr
+                {money(Math.max(0, Number(moneyGoal.target_value ?? 0) - earned))} to go
+                {rate > 0
+                  ? ` · ~${Math.max(0, (Number(moneyGoal.target_value ?? 0) - earned) / rate).toFixed(1)} hours at ${money(rate)}/hr`
+                  : ""}
               </p>
             </div>
           )}
         </Panel>
+        )}
 
         <Panel title="Fitness">
           <div className="stat-number text-3xl text-fitness">{exerciseThisWeek(data)}</div>
@@ -250,14 +256,16 @@ function Today() {
           <p className="mt-1 text-xs text-muted-foreground">Target: 4 / week</p>
         </Panel>
 
-        <Panel title="Room move">
+        {show("projects") && (
+        <Panel title="Active project">
           {(() => {
-            const project = data.projects.find((p) => p.name.toLowerCase().includes("room"));
+            const project = data.projects.find((p) => p.status === "active") ?? data.projects[0];
             if (!project) return <p className="text-sm text-muted-foreground">No project yet.</p>;
             const pt = data.tasks.filter((t) => t.project_id === project.id);
             const pct = pt.length ? (pt.filter((t) => t.done).length / pt.length) * 100 : 0;
             return (
               <div>
+                <p className="truncate text-sm font-medium">{project.name}</p>
                 <div className="stat-number text-3xl">{Math.round(pct)}%</div>
                 <Meter className="mt-2" value={pct} />
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -271,6 +279,7 @@ function Today() {
             );
           })()}
         </Panel>
+        )}
       </div>
 
       <Stats data={data} />
