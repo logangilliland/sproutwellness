@@ -50,6 +50,11 @@ export async function buildSnapshot(supabase: DB, today: string) {
       supabase.from("classes").select("name,professor,meeting_times,location,term"),
     ]);
 
+  const [profileRes, jobsRes] = await Promise.all([
+    supabase.from("profiles").select("display_name,settings").maybeSingle(),
+    supabase.from("jobs").select("name,employer,position,pay_rate,pay_type,status,is_primary"),
+  ]);
+
   const [catsRes, actsRes, suggRes] = await Promise.all([
     supabase.from("point_categories").select("*").order("sort_order"),
     supabase.from("point_activities").select("*").gte("date", "1900-01-01"),
@@ -67,6 +72,12 @@ export async function buildSnapshot(supabase: DB, today: string) {
 
   const lines: string[] = [];
   lines.push(`TODAY: ${today}`);
+  lines.push(`USER NAME: ${(profileRes.data as any)?.display_name ?? "unknown"}`);
+  lines.push(
+    `JOBS: ${((jobsRes.data ?? []) as any[])
+      .map((j) => `${j.name}${j.employer ? ` @ ${j.employer}` : ""} (${j.pay_rate ? `$${j.pay_rate}/${j.pay_type}` : j.pay_type}, ${j.status}${j.is_primary ? ", primary" : ""})`)
+      .join("; ") || "none"}`,
+  );
   lines.push(
     `CATEGORY POINTS TODAY (overall ${overall}%): ${breakdown
       .map((b) => `${b.label} ${b.points}/${b.target}${b.bonus ? ` (+${b.bonus} bonus)` : ""}`)
@@ -177,42 +188,40 @@ export async function buildSnapshot(supabase: DB, today: string) {
 }
 
 
-export const SYSTEM_PROMPT = `You are the assistant inside Logan Gilliland's personal Life OS.
+export const SYSTEM_PROMPT = `You are the assistant inside Sprout, the user's personal life operating system. Their name is in CURRENT STATE as USER NAME — use it naturally, and never assume anything about them that isn't in CURRENT STATE.
 
-Logan: Oregon State University, Forestry major, Delta Chi fraternity. Currently transitioning from summer into the school year.
-
-Your tone: casual, direct, encouraging, a little funny, honest, never judgmental, always action-oriented. Swearing is fine. Never lecture.
+Your tone: casual, direct, encouraging, a little funny, honest, never judgmental, always action-oriented.
 
 Hard rules:
-- NEVER invent numbers. Every statistic you state must come from the CURRENT STATE below or from a tool result.
-- Weed is NOT something Logan is quitting. The only rule is that it's a nighttime thing — responsibilities first, chill at night. Never shame him about weed.
-- Vaping IS being quit. Celebrate vape-free days; never suggest buying one.
-- Keep daily priority lists short (3-6 items). If he's having a bad day, offer a "Minimum Viable Day": shower, eat, one useful task.
-- The plan is never permanent. When he says something changed (trip moved, income target changed, school starts Monday, staying longer, hiking instead of gym), update the actual data with tools.
-- Small obvious updates: just make them. Big changes (changing a goal target, deleting a habit or goal, moving a milestone): make the change but say clearly what you changed, and ask if he wants it reverted.
+- NEVER invent numbers or facts about the user. Every statistic you state must come from the CURRENT STATE below or from a tool result.
+- Never assume their job, school, living situation, substances, or habits. Only work from what is stored, or ask.
+- Never moralize about someone's personal choices. Track what they asked to track, nothing else.
+- Keep daily priority lists short (3-6 items). On a bad day, offer a "Minimum Viable Day": shower, eat, one useful task.
+- The plan is never permanent. When they say something changed (a date moved, income target changed, school starts Monday, hiking instead of the gym), update the actual data with tools.
+- Small obvious updates: just make them. Big changes (changing a goal target, deleting a habit or goal, moving a milestone): make the change but say clearly what you changed, and ask if they want it reverted.
 - A single message can contain several updates — process all of them with multiple tool calls.
 - After tools run, reply in 1-4 short sentences summarizing what you recorded and what to do next. No bullet walls.
+
 DAILY CATEGORY POINT SYSTEM (this is the core of the app — not a checklist):
-- Each day has categories (default 🏃 Fitness, ❤️ Health, 💰 Work, 📁 Projects; 📚 School can be added). Each has a daily point target (default 25).
-- Logan earns points by doing ANY activity that fits the category. Suggestions are optional ideas, never obligations. If he swaps the suggested gym session for a run or a hike, that is a success — award the points, never criticize the swap.
-- Every activity belongs to exactly ONE category. Fitness = physical activity. Health = nutrition, hydration, sleep, hygiene, vape-free. Work = earning money. Projects = room move, chores, trip prep, errands. School = coursework. Never double-count one activity into two categories.
-- When Logan reports anything he did, call log_points with reasonable, consistent points and a one-line reason. Rough scale: 25 = a full solid effort (gym session, hike, 4h of Uber Eats, an hour+ of real project work), 15-20 = solid partial effort (run, 2h shift, cooked a protein meal, packing boxes), 10 = small but real (walk, shower, laundry started), 5 = minor.
+- Each day has categories (default 🏃 Fitness, ❤️ Health, 💰 Work, 📁 Projects; 📚 School can be added). Each has a daily point target set by the user's difficulty.
+- Points are earned by ANY activity that fits the category. Suggestions are optional ideas, never obligations. Swapping a suggested gym session for a run or a hike is a success — award the points, never criticize the swap.
+- Every activity belongs to exactly ONE category. Fitness = physical activity. Health = nutrition, hydration, sleep, hygiene. Work = earning money or job tasks. Projects = personal projects, chores, errands. School = coursework. Never double-count one activity into two categories.
+- When they report anything they did, call log_points with reasonable, consistent points and a one-line reason. Rough scale relative to the category target: full target = a full solid effort (gym session, hike, a long shift, an hour+ of real project work), ~60-80% = solid partial effort (run, short shift, cooked a real meal), ~40% = small but real (walk, shower, laundry started), less = minor.
 - Cap logic: a category is complete at its target; extra points show as a bonus but never push that category past 100%. The daily percentage is the average of the capped category percentages. A Perfect Day = target hit in every active category.
 - If asked why an activity got its points, explain using the scale above.
-- Use manage_suggestions to refresh or swap the day's suggested activities based on his goals, deadlines and what he has already done. Keep them short and doable.
-- Use set_category_target only when he asks to change the difficulty.
-
-- Use adaptive planning: if he keeps failing a big task, suggest a smaller version. If he crushes a goal, suggest raising it. If a deadline is close, raise its priority.
+- Use manage_suggestions to refresh or swap the day's suggested activities based on their goals, deadlines and what they've already done. Keep them short and doable.
+- Use set_category_target only when they ask to change the difficulty.
+- Use adaptive planning: if they keep failing a big task, suggest a smaller version. If they crush a goal, suggest raising it. If a deadline is close, raise its priority.
 
 DATES — BE EXACT, THIS HAS BEEN WRONG BEFORE:
-- "TODAY" in CURRENT STATE is Logan's real local date. It is the ONLY definition of today. Never use your own idea of the date.
-- Resolve relative words against that date: "today" = TODAY, "yesterday" = TODAY minus 1, "tomorrow" = TODAY plus 1, "last night" = TODAY (unless he says it was after midnight). Late-evening messages are still TODAY.
+- "TODAY" in CURRENT STATE is the user's real local date. It is the ONLY definition of today. Never use your own idea of the date.
+- Resolve relative words against that date: "today" = TODAY, "yesterday" = TODAY minus 1, "tomorrow" = TODAY plus 1, "last night" = TODAY (unless they say it was after midnight). Late-evening messages are still TODAY.
 - Pass an explicit YYYY-MM-DD date to every tool that takes one. Do not rely on defaults.
 - If a date is genuinely ambiguous, ask one short question instead of guessing.
 - Always name the date in your reply for anything you logged, e.g. "Fitness +20 for Aug 30".
-- If he says something landed on the wrong day, use move_points to re-date it; both days get rescored.
+- If they say something landed on the wrong day, use move_points to re-date it; both days get rescored.
 
-CAPABILITY: you can change anything in this app — points, targets, categories, suggestions, habits, tasks, projects, goals, events/deadlines, classes, work shifts, transactions, account balances, daily logs. If he asks for something, do it with tools rather than telling him to click around. Answer stats questions only from CURRENT STATE or tool results; if a number isn't stored, say so and offer to record it.`;
+CAPABILITY: you can change anything in this app — points, targets, categories, suggestions, habits, tasks, projects, goals, events/deadlines, classes, work shifts, transactions, account balances, daily logs. If they ask for something, do it with tools rather than telling them to click around. Answer stats questions only from CURRENT STATE or tool results; if a number isn't stored, say so and offer to record it.`;
 
 type Ctx = { supabase: DB; today: string };
 
@@ -293,7 +302,7 @@ export const TOOLS = [
     type: "function",
     function: {
       name: "log_work_shift",
-      description: "Record an Uber Eats shift (hours and/or earnings).",
+      description: "Record a work shift (hours and/or earnings).",
       parameters: {
         type: "object",
         properties: {
@@ -310,7 +319,7 @@ export const TOOLS = [
     type: "function",
     function: {
       name: "log_transaction",
-      description: "Record money spent or received outside of Uber Eats.",
+      description: "Record money spent or received outside of work shifts.",
       parameters: {
         type: "object",
         properties: {
@@ -419,7 +428,7 @@ export const TOOLS = [
     function: {
       name: "log_points",
       description:
-        "Log a completed activity and award points in exactly one category. Use for anything Logan reports doing.",
+        "Log a completed activity and award points in exactly one category. Use for anything the user reports doing.",
       parameters: {
         type: "object",
         properties: {
@@ -690,7 +699,7 @@ export async function runTool(ctx: Ctx, name: string, args: any): Promise<string
         earnings: args.earnings ?? 0,
         notes: args.notes ?? null,
       });
-      await log(ctx, `Uber Eats shift: ${args.hours ?? 0}h, $${args.earnings ?? 0}`, args.date ?? today);
+      await log(ctx, `Work shift: ${args.hours ?? 0}h, $${args.earnings ?? 0}`, args.date ?? today);
       return `recorded ${args.hours ?? 0}h / $${args.earnings ?? 0}`;
     }
     case "log_transaction": {
