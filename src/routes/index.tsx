@@ -28,13 +28,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Today — Logan's Life OS" },
+      { title: "Today — Sprout" },
       {
         name: "description",
         content:
           "Daily command center: priorities, productivity score, habit streaks, money, fitness and the next big deadline.",
       },
-      { property: "og:title", content: "Today — Logan's Life OS" },
+      { property: "og:title", content: "Today — Sprout" },
       {
         property: "og:description",
         content: "What to do next, how you're doing, and whether you're improving.",

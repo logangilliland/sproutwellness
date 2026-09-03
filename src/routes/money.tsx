@@ -21,13 +21,13 @@ import {
 export const Route = createFileRoute("/money")({
   head: () => ({
     meta: [
-      { title: "Money — Logan's Life OS" },
+      { title: "Money — Sprout" },
       {
         name: "description",
         content:
           "Track checking, savings and cash, Uber Eats hours and earnings, hourly rate, spending and income goals.",
       },
-      { property: "og:title", content: "Money — Logan's Life OS" },
+      { property: "og:title", content: "Money — Sprout" },
       {
         property: "og:description",
         content: "Income tracker for Uber Eats shifts, balances, spending and money goals.",

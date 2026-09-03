@@ -13,13 +13,13 @@ import { GOAL_CATEGORIES, daysBetween, prettyDate, todayKey } from "@/lib/lifeos
 export const Route = createFileRoute("/goals")({
   head: () => ({
     meta: [
-      { title: "Goals — Logan's Life OS" },
+      { title: "Goals — Sprout" },
       {
         name: "description",
         content:
           "Long-term goals across money, fitness, school, health, living, career and travel with progress and deadlines.",
       },
-      { property: "og:title", content: "Goals — Logan's Life OS" },
+      { property: "og:title", content: "Goals — Sprout" },
       {
         property: "og:description",
         content: "Goals that stay active until completed, paused or deleted — not a one-week challenge.",
