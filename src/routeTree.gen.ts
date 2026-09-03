@@ -19,6 +19,7 @@ import { Route as MoneyRouteImport } from './routes/money'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as SchoolRouteImport } from './routes/school'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,11 @@ const SchoolRoute = SchoolRouteImport.update({
   path: '/school',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatsRoute = StatsRouteImport.update({
   id: '/stats',
   path: '/stats',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/projects'
     | '/school'
+    | '/settings'
     | '/stats'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/projects'
     | '/school'
+    | '/settings'
     | '/stats'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/projects'
     | '/school'
+    | '/settings'
     | '/stats'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ProjectsRoute: typeof ProjectsRoute
   SchoolRoute: typeof SchoolRoute
+  SettingsRoute: typeof SettingsRoute
   StatsRoute: typeof StatsRoute
 }
 
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SchoolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stats': {
       id: '/stats'
       path: '/stats'
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ProjectsRoute: ProjectsRoute,
   SchoolRoute: SchoolRoute,
+  SettingsRoute: SettingsRoute,
   StatsRoute: StatsRoute,
 }
 export const routeTree = rootRouteImport
