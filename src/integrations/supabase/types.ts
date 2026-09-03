@@ -409,6 +409,60 @@ export type Database = {
         }
         Relationships: []
       }
+      jobs: {
+        Row: {
+          created_at: string
+          employer: string | null
+          id: string
+          is_primary: boolean
+          location: string | null
+          name: string
+          pay_rate: number
+          pay_type: string
+          position: string | null
+          sort_order: number
+          start_date: string | null
+          status: string
+          typical_hours: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          employer?: string | null
+          id?: string
+          is_primary?: boolean
+          location?: string | null
+          name: string
+          pay_rate?: number
+          pay_type?: string
+          position?: string | null
+          sort_order?: number
+          start_date?: string | null
+          status?: string
+          typical_hours?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          employer?: string | null
+          id?: string
+          is_primary?: boolean
+          location?: string | null
+          name?: string
+          pay_rate?: number
+          pay_type?: string
+          position?: string | null
+          sort_order?: number
+          start_date?: string | null
+          status?: string
+          typical_hours?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       point_activities: {
         Row: {
           category_id: string
@@ -536,24 +590,30 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
-          display_name: string
+          display_name: string | null
           id: string
+          onboarded: boolean
           seeded: boolean
           settings: Json
+          updated_at: string
         }
         Insert: {
           created_at?: string
-          display_name?: string
+          display_name?: string | null
           id: string
+          onboarded?: boolean
           seeded?: boolean
           settings?: Json
+          updated_at?: string
         }
         Update: {
           created_at?: string
-          display_name?: string
+          display_name?: string | null
           id?: string
+          onboarded?: boolean
           seeded?: boolean
           settings?: Json
+          updated_at?: string
         }
         Relationships: []
       }
@@ -680,6 +740,8 @@ export type Database = {
           earnings: number
           hours: number
           id: string
+          job_id: string | null
+          job_name: string | null
           miles: number | null
           notes: string | null
           user_id: string
@@ -690,6 +752,8 @@ export type Database = {
           earnings?: number
           hours?: number
           id?: string
+          job_id?: string | null
+          job_name?: string | null
           miles?: number | null
           notes?: string | null
           user_id?: string
@@ -700,18 +764,28 @@ export type Database = {
           earnings?: number
           hours?: number
           id?: string
+          job_id?: string | null
+          job_name?: string | null
           miles?: number | null
           notes?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "work_shifts_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      seed_life_os: { Args: never; Returns: undefined }
+      reset_sprout: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
