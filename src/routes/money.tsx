@@ -25,12 +25,12 @@ export const Route = createFileRoute("/money")({
       {
         name: "description",
         content:
-          "Track checking, savings and cash, Uber Eats hours and earnings, hourly rate, spending and income goals.",
+          "Track your accounts, work shifts and earnings, hourly rate, spending and income goals.",
       },
       { property: "og:title", content: "Money — Sprout" },
       {
         property: "og:description",
-        content: "Income tracker for Uber Eats shifts, balances, spending and money goals.",
+        content: "Income tracker for work shifts, balances, spending and money goals.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -46,7 +46,8 @@ export const Route = createFileRoute("/money")({
 function Money() {
   const { data, isLoading } = useLifeData();
   const refresh = useRefreshLife();
-  const [shift, setShift] = useState({ date: todayKey(), hours: "", earnings: "", miles: "", notes: "" });
+  const [shift, setShift] = useState({ date: todayKey(), hours: "", earnings: "", miles: "", notes: "", job_id: "" });
+  const [acct, setAcct] = useState({ name: "", kind: "checking", balance: "" });
   const [txn, setTxn] = useState({ date: todayKey(), amount: "", kind: "expense", category: "", notes: "" });
 
   if (isLoading || !data) return <p className="text-muted-foreground">Loading finances…</p>;
@@ -60,9 +61,10 @@ function Money() {
   const monthEarned = monthShifts.reduce((s, x) => s + Number(x.earnings), 0);
   const allHours = data.shifts.reduce((s, x) => s + Number(x.hours), 0);
   const allEarned = data.shifts.reduce((s, x) => s + Number(x.earnings), 0);
-  const rate = allHours ? allEarned / allHours : 21;
+  const primaryJob = data.jobs.find((j) => j.is_primary) ?? data.jobs[0];
+  const rate = allHours ? allEarned / allHours : Number(primaryJob?.pay_rate ?? 0);
   const goal = data.goals.find((g) => g.category === "financial" && g.status === "active");
-  const target = Number(goal?.target_value ?? 250);
+  const target = Number(goal?.target_value ?? 0);
   const remaining = Math.max(0, target - earned);
   const weekSpend = data.transactions
     .filter((t) => t.kind === "expense" && t.date >= ws)
@@ -72,8 +74,42 @@ function Money() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-2xl font-bold">Money</h1>
-        <p className="text-sm text-muted-foreground">Balances, Uber Eats income and spending.</p>
+        <p className="text-sm text-muted-foreground">Balances, income from your jobs and spending.</p>
       </div>
+
+      <Panel title="Accounts">
+        <form
+          className="flex flex-wrap gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!acct.name.trim()) return;
+            await supabase.from("accounts").insert({
+              name: acct.name.trim(),
+              kind: acct.kind,
+              balance: Number(acct.balance || 0),
+              is_savings: acct.kind === "savings",
+              sort_order: data.accounts.length + 1,
+            });
+            setAcct({ name: "", kind: "checking", balance: "" });
+            refresh();
+          }}
+        >
+          <Input className="min-w-40 flex-1" placeholder="Account name" value={acct.name} onChange={(e) => setAcct({ ...acct, name: e.target.value })} />
+          <select
+            className="rounded-md border border-input bg-surface px-3 py-2 text-sm"
+            value={acct.kind}
+            onChange={(e) => setAcct({ ...acct, kind: e.target.value })}
+          >
+            <option value="checking">Checking</option>
+            <option value="savings">Savings</option>
+            <option value="cash">Cash</option>
+          </select>
+          <Input className="w-32" placeholder="Balance" inputMode="decimal" value={acct.balance} onChange={(e) => setAcct({ ...acct, balance: e.target.value })} />
+          <Button type="submit">
+            <Plus className="size-4" /> Add account
+          </Button>
+        </form>
+      </Panel>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {data.accounts.map((a) => (
@@ -118,23 +154,38 @@ function Money() {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Log an Uber Eats shift">
+        <Panel title="Log a work shift">
           <form
             className="grid grid-cols-2 gap-2"
             onSubmit={async (e) => {
               e.preventDefault();
+              const selected = data.jobs.find((j) => j.id === shift.job_id) ?? primaryJob;
               await supabase.from("work_shifts").insert({
                 date: shift.date,
+                job_id: selected?.id ?? null,
+                job_name: selected?.name ?? null,
                 hours: Number(shift.hours || 0),
                 earnings: Number(shift.earnings || 0),
                 miles: shift.miles ? Number(shift.miles) : null,
                 notes: shift.notes || null,
               });
-              setShift({ date: todayKey(), hours: "", earnings: "", miles: "", notes: "" });
+              setShift({ date: todayKey(), hours: "", earnings: "", miles: "", notes: "", job_id: shift.job_id });
               refresh();
             }}
           >
             <Input type="date" value={shift.date} onChange={(e) => setShift({ ...shift, date: e.target.value })} />
+            <select
+              className="rounded-md border border-input bg-surface px-3 py-2 text-sm"
+              value={shift.job_id}
+              onChange={(e) => setShift({ ...shift, job_id: e.target.value })}
+            >
+              <option value="">{primaryJob ? primaryJob.name : "No job — add one in Settings"}</option>
+              {data.jobs.map((j) => (
+                <option key={j.id} value={j.id}>
+                  {j.name}
+                </option>
+              ))}
+            </select>
             <Input placeholder="Hours" inputMode="decimal" value={shift.hours} onChange={(e) => setShift({ ...shift, hours: e.target.value })} />
             <Input placeholder="Earnings $" inputMode="decimal" value={shift.earnings} onChange={(e) => setShift({ ...shift, earnings: e.target.value })} />
             <Input placeholder="Miles (optional)" inputMode="decimal" value={shift.miles} onChange={(e) => setShift({ ...shift, miles: e.target.value })} />
@@ -149,6 +200,7 @@ function Money() {
                 <span className="w-24 text-muted-foreground">{prettyDate(s.date)}</span>
                 <span className="font-mono">{Number(s.hours).toFixed(1)}h</span>
                 <span className="font-mono text-money">{money(Number(s.earnings))}</span>
+                <span className="truncate text-xs text-muted-foreground">{s.job_name ?? ""}</span>
                 <span className="text-xs text-muted-foreground">
                   {Number(s.hours) ? `${money(Number(s.earnings) / Number(s.hours))}/hr` : ""}
                 </span>
@@ -200,8 +252,7 @@ function Money() {
             </Button>
           </form>
           <p className="mt-3 text-sm text-muted-foreground">
-            Spent this week: <span className="font-mono text-foreground">{money(weekSpend)}</span> ·
-            comfortable budget $200/wk
+            Spent this week: <span className="font-mono text-foreground">{money(weekSpend)}</span>
           </p>
           <ul className="mt-2 space-y-1.5">
             {data.transactions.slice(0, 8).map((t) => (
