@@ -93,6 +93,8 @@ export type Shift = {
   earnings: number;
   miles: number | null;
   notes: string | null;
+  job_id?: string | null;
+  job_name?: string | null;
 };
 
 export type DailyLog = {
