@@ -409,6 +409,60 @@ export type Database = {
         }
         Relationships: []
       }
+      jobs: {
+        Row: {
+          created_at: string
+          employer: string | null
+          id: string
+          is_primary: boolean
+          location: string | null
+          name: string
+          pay_rate: number
+          pay_type: string
+          position: string | null
+          sort_order: number
+          start_date: string | null
+          status: string
+          typical_hours: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          employer?: string | null
+          id?: string
+          is_primary?: boolean
+          location?: string | null
+          name: string
+          pay_rate?: number
+          pay_type?: string
+          position?: string | null
+          sort_order?: number
+          start_date?: string | null
+          status?: string
+          typical_hours?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          employer?: string | null
+          id?: string
+          is_primary?: boolean
+          location?: string | null
+          name?: string
+          pay_rate?: number
+          pay_type?: string
+          position?: string | null
+          sort_order?: number
+          start_date?: string | null
+          status?: string
+          typical_hours?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       point_activities: {
         Row: {
           category_id: string
@@ -536,24 +590,30 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
-          display_name: string
+          display_name: string | null
           id: string
+          onboarded: boolean
           seeded: boolean
           settings: Json
+          updated_at: string
         }
         Insert: {
           created_at?: string
-          display_name?: string
+          display_name?: string | null
           id: string
+          onboarded?: boolean
           seeded?: boolean
           settings?: Json
+          updated_at?: string
         }
         Update: {
           created_at?: string
-          display_name?: string
+          display_name?: string | null
           id?: string
+          onboarded?: boolean
           seeded?: boolean
           settings?: Json
+          updated_at?: string
         }
         Relationships: []
       }
@@ -680,6 +740,8 @@ export type Database = {
           earnings: number
           hours: number
           id: string
+          job_id: string | null
+          job_name: string | null
           miles: number | null
           notes: string | null
           user_id: string
@@ -690,6 +752,8 @@ export type Database = {
           earnings?: number
           hours?: number
           id?: string
+          job_id?: string | null
+          job_name?: string | null
           miles?: number | null
           notes?: string | null
           user_id?: string
@@ -700,18 +764,28 @@ export type Database = {
           earnings?: number
           hours?: number
           id?: string
+          job_id?: string | null
+          job_name?: string | null
           miles?: number | null
           notes?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "work_shifts_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      seed_life_os: { Args: never; Returns: undefined }
+      reset_sprout: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
@@ -730,12 +804,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -759,11 +833,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -784,11 +858,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -809,11 +883,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -826,11 +900,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

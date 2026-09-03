@@ -25,13 +25,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/garden")({
   head: () => ({
     meta: [
-      { title: "Garden — Logan's Life OS" },
+      { title: "Garden — Sprout" },
       {
         name: "description",
         content:
           "Every productive day grows a plant. Browse your permanent garden, favourite plants and botanical discovery book.",
       },
-      { property: "og:title", content: "Garden — Logan's Life OS" },
+      { property: "og:title", content: "Garden — Sprout" },
       {
         property: "og:description",
         content: "A living history of every day you showed up, grown one plant at a time.",

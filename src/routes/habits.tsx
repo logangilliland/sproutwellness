@@ -21,13 +21,13 @@ import {
 export const Route = createFileRoute("/habits")({
   head: () => ({
     meta: [
-      { title: "Habits — Logan's Life OS" },
+      { title: "Habits — Sprout" },
       {
         name: "description",
         content:
           "Track daily and weekly habits with streaks, best streaks, completion rates and a 12-week heatmap.",
       },
-      { property: "og:title", content: "Habits — Logan's Life OS" },
+      { property: "og:title", content: "Habits — Sprout" },
       {
         property: "og:description",
         content: "Streaks, heatmaps and weekly stats for morning, money, fitness, life and night habits.",

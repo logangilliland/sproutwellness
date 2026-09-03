@@ -16,8 +16,10 @@ import { Route as GardenRouteImport } from './routes/garden'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as HabitsRouteImport } from './routes/habits'
 import { Route as MoneyRouteImport } from './routes/money'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as SchoolRouteImport } from './routes/school'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
 
 const IndexRoute = IndexRouteImport.update({
@@ -55,6 +57,11 @@ const MoneyRoute = MoneyRouteImport.update({
   path: '/money',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsRoute = ProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
@@ -63,6 +70,11 @@ const ProjectsRoute = ProjectsRouteImport.update({
 const SchoolRoute = SchoolRouteImport.update({
   id: '/school',
   path: '/school',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StatsRoute = StatsRouteImport.update({
@@ -79,8 +91,10 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
 }
 export interface FileRoutesByTo {
@@ -91,8 +105,10 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
 }
 export interface FileRoutesById {
@@ -104,8 +120,10 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/habits': typeof HabitsRoute
   '/money': typeof MoneyRoute
+  '/onboarding': typeof OnboardingRoute
   '/projects': typeof ProjectsRoute
   '/school': typeof SchoolRoute
+  '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
 }
 export interface FileRouteTypes {
@@ -118,8 +136,10 @@ export interface FileRouteTypes {
     | '/goals'
     | '/habits'
     | '/money'
+    | '/onboarding'
     | '/projects'
     | '/school'
+    | '/settings'
     | '/stats'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -130,8 +150,10 @@ export interface FileRouteTypes {
     | '/goals'
     | '/habits'
     | '/money'
+    | '/onboarding'
     | '/projects'
     | '/school'
+    | '/settings'
     | '/stats'
   id:
     | '__root__'
@@ -142,8 +164,10 @@ export interface FileRouteTypes {
     | '/goals'
     | '/habits'
     | '/money'
+    | '/onboarding'
     | '/projects'
     | '/school'
+    | '/settings'
     | '/stats'
   fileRoutesById: FileRoutesById
 }
@@ -155,8 +179,10 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   HabitsRoute: typeof HabitsRoute
   MoneyRoute: typeof MoneyRoute
+  OnboardingRoute: typeof OnboardingRoute
   ProjectsRoute: typeof ProjectsRoute
   SchoolRoute: typeof SchoolRoute
+  SettingsRoute: typeof SettingsRoute
   StatsRoute: typeof StatsRoute
 }
 
@@ -211,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoneyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects': {
       id: '/projects'
       path: '/projects'
@@ -223,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/school'
       fullPath: '/school'
       preLoaderRoute: typeof SchoolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/stats': {
@@ -243,8 +283,10 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsRoute: GoalsRoute,
   HabitsRoute: HabitsRoute,
   MoneyRoute: MoneyRoute,
+  OnboardingRoute: OnboardingRoute,
   ProjectsRoute: ProjectsRoute,
   SchoolRoute: SchoolRoute,
+  SettingsRoute: SettingsRoute,
   StatsRoute: StatsRoute,
 }
 export const routeTree = rootRouteImport

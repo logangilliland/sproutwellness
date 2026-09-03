@@ -13,13 +13,13 @@ import { daysBetween, prettyDate, todayKey } from "@/lib/lifeos";
 export const Route = createFileRoute("/school")({
   head: () => ({
     meta: [
-      { title: "School — Logan's Life OS" },
+      { title: "School — Sprout" },
       {
         name: "description",
         content:
-          "Oregon State forestry classes, professors, meeting times, exams and assignment deadlines feeding into daily planning.",
+          "Classes, professors, meeting times, exams and assignment deadlines. Under construction.",
       },
-      { property: "og:title", content: "School — Logan's Life OS" },
+      { property: "og:title", content: "School — Sprout" },
       {
         property: "og:description",
         content: "Classes, exams and academic deadlines that shape what to prioritize.",
@@ -67,7 +67,7 @@ function School() {
       <div>
         <h1 className="font-display text-2xl font-bold">School</h1>
         <p className="text-sm text-muted-foreground">
-          Oregon State University · Forestry · Delta Chi
+          School — under construction
         </p>
       </div>
 

@@ -34,13 +34,13 @@ import {
 export const Route = createFileRoute("/stats")({
   head: () => ({
     meta: [
-      { title: "Stats — Logan's Life OS" },
+      { title: "Stats — Sprout" },
       {
         name: "description",
         content:
           "Daily, weekly and monthly trends: productivity score, habit completion, earnings, hours worked, exercise and vape-free days.",
       },
-      { property: "og:title", content: "Stats — Logan's Life OS" },
+      { property: "og:title", content: "Stats — Sprout" },
       {
         property: "og:description",
         content: "Charts and streaks that show whether you're actually improving.",

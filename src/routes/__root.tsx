@@ -79,14 +79,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Logan's Life OS" },
+      { title: "Sprout" },
       {
         name: "description",
         content:
           "A private personal life operating system: habits, tasks, money, fitness, goals and an AI assistant that adapts as life changes.",
       },
-      { name: "author", content: "Logan Gilliland" },
-      { property: "og:title", content: "Logan's Life OS" },
+      { property: "og:title", content: "Sprout" },
       {
         property: "og:description",
         content: "Plan, do, track, adjust — a living system for college life.",

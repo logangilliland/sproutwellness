@@ -39,7 +39,7 @@ export function TodayPlant({
     () =>
       existing
         ? speciesFor(existing.species_key)
-        : seedForDate(date, user?.id ?? "logan"),
+        : seedForDate(date, user?.id ?? ""),
     [existing, date, user?.id],
   );
   const stage = stageForPct(overall);

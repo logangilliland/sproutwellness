@@ -14,13 +14,13 @@ import { daysBetween, prettyDate, todayKey } from "@/lib/lifeos";
 export const Route = createFileRoute("/projects")({
   head: () => ({
     meta: [
-      { title: "Projects — Logan's Life OS" },
+      { title: "Projects — Sprout" },
       {
         name: "description",
         content:
-          "Multi-step projects like the Delta Chi room move, with task lists, progress percentage, deadlines and priority.",
+          "Multi-step projects with task lists, progress percentage, deadlines and priority.",
       },
-      { property: "og:title", content: "Projects — Logan's Life OS" },
+      { property: "og:title", content: "Projects — Sprout" },
       {
         property: "og:description",
         content: "Break big things into tasks and watch the progress bar move.",

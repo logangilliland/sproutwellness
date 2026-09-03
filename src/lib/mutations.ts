@@ -51,14 +51,14 @@ export async function upsertDailyLog(date: string, patch: Record<string, unknown
 
 /* ---------- category point system ---------- */
 
-export async function ensureCategories(existing: PointCategory[]) {
+export async function ensureCategories(existing: PointCategory[], target?: number) {
   if (existing.length) return;
   await supabase.from("point_categories").insert(
     DEFAULT_CATEGORIES.map((c) => ({
       key: c.key,
       label: c.label,
       emoji: c.emoji,
-      daily_target: c.daily_target,
+      daily_target: target ?? c.daily_target,
       sort_order: c.sort_order,
     })),
   );
@@ -193,4 +193,48 @@ export async function lockPastPlants(today: string) {
 
 export async function setPlantFavorite(id: string, favorite: boolean) {
   await supabase.from("garden_plants").update({ favorite }).eq("id", id);
+}
+
+/* ---------- jobs ---------- */
+
+export type JobInput = {
+  name: string;
+  employer?: string | null;
+  position?: string | null;
+  pay_rate?: number;
+  pay_type?: string;
+  typical_hours?: number | null;
+  location?: string | null;
+  start_date?: string | null;
+  status?: string;
+  is_primary?: boolean;
+};
+
+export async function addJob(input: JobInput) {
+  const { data } = await supabase.from("jobs").insert({ ...input }).select("id").maybeSingle();
+  if (input.is_primary && data?.id) await setPrimaryJob(data.id);
+  return data?.id ?? null;
+}
+
+export async function updateJob(id: string, patch: Partial<JobInput>) {
+  await supabase.from("jobs").update(patch).eq("id", id);
+  if (patch.is_primary) await setPrimaryJob(id);
+}
+
+export async function setPrimaryJob(id: string) {
+  await supabase.from("jobs").update({ is_primary: false }).neq("id", id);
+  await supabase.from("jobs").update({ is_primary: true }).eq("id", id);
+}
+
+export async function deleteJob(id: string) {
+  // keep historical earnings: shifts keep job_name, lose the link
+  await supabase.from("work_shifts").update({ job_id: null }).eq("job_id", id);
+  await supabase.from("jobs").delete().eq("id", id);
+}
+
+/* ---------- reset ---------- */
+
+export async function resetSprout() {
+  const { error } = await supabase.rpc("reset_sprout");
+  if (error) throw error;
 }

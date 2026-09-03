@@ -14,13 +14,13 @@ import { EVENT_TYPES, addDays, daysBetween, prettyDate, todayKey, toKey, fromKey
 export const Route = createFileRoute("/calendar")({
   head: () => ({
     meta: [
-      { title: "Calendar — Logan's Life OS" },
+      { title: "Calendar — Sprout" },
       {
         name: "description",
         content:
           "Persistent life calendar: school dates, exams, deadlines, breaks, fraternity events, trips, work shifts and personal events.",
       },
-      { property: "og:title", content: "Calendar — Logan's Life OS" },
+      { property: "og:title", content: "Calendar — Sprout" },
       {
         property: "og:description",
         content: "Deadlines and life events that stay on record instead of disappearing.",

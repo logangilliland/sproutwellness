@@ -11,13 +11,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Logan's Life OS" },
+      { title: "Sign in — Sprout" },
       {
         name: "description",
         content:
-          "Sign in to Logan's Life OS: habits, tasks, money, fitness, goals and an AI assistant that keeps the plan current.",
+          "Sign in to Sprout: habits, tasks, money, fitness, goals and an AI assistant that keeps the plan current.",
       },
-      { property: "og:title", content: "Sign in — Logan's Life OS" },
+      { property: "og:title", content: "Sign in — Sprout" },
       {
         property: "og:description",
         content: "Private personal life operating system: habits, money, goals and AI planning.",
@@ -69,7 +69,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="panel w-full max-w-sm p-6">
         <p className="text-[10px] uppercase tracking-[0.3em] text-primary">Personal system</p>
-        <h1 className="mt-1 font-display text-2xl font-bold">LOGAN&apos;S LIFE OS</h1>
+        <h1 className="mt-1 font-display text-2xl font-bold">SPROUT</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Plan → do → track → adjust. Private to you.
         </p>

@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const PROMPTS = [
-  "I made $87 doing Uber Eats today over 4 hours.",
+  "I made $87 doing a shift today over 4 hours.",
   "I didn't go to the gym but I went hiking for two hours.",
   "What should I do right now?",
 ];
