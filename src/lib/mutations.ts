@@ -201,7 +201,7 @@ export type JobInput = {
   name: string;
   employer?: string | null;
   position?: string | null;
-  pay_rate?: number | null;
+  pay_rate?: number;
   pay_type?: string;
   typical_hours?: number | null;
   location?: string | null;
