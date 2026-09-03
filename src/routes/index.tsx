@@ -8,6 +8,8 @@ import { TodayPlant } from "@/components/garden/TodayPlant";
 import { computeBreakdown } from "@/lib/points";
 import { ChatPanel } from "@/components/lifeos/ChatPanel";
 import { useLifeData, useRefreshLife } from "@/hooks/useLifeData";
+import { useProfile } from "@/hooks/useProfile";
+import { sectionOn } from "@/lib/profile";
 import { toggleHabit } from "@/lib/mutations";
 import {
   daysBetween,
@@ -17,10 +19,8 @@ import {
   money,
   nextMilestone,
   phaseFor,
-  streak,
   todayKey,
   totalMoney,
-  vapeFreeDates,
   weekEarnings,
   prettyDate,
 } from "@/lib/lifeos";
@@ -50,15 +50,17 @@ export const Route = createFileRoute("/")({
   ),
 });
 
-function greeting() {
+function greeting(name: string) {
+  const who = name.trim() ? `, ${name.trim().toUpperCase()}` : "";
   const h = new Date().getHours();
-  if (h < 12) return "GOOD MORNING, LOGAN";
-  if (h < 18) return "GOOD AFTERNOON, LOGAN";
-  return "GOOD EVENING, LOGAN";
+  if (h < 12) return `GOOD MORNING${who}`;
+  if (h < 18) return `GOOD AFTERNOON${who}`;
+  return `GOOD EVENING${who}`;
 }
 
 function Today() {
   const { data, isLoading } = useLifeData();
+  const { profile } = useProfile();
   const refresh = useRefreshLife();
   const today = todayKey();
 
@@ -66,9 +68,8 @@ function Today() {
     if (!data) return null;
     const ls = lifeScore(data);
     const milestone = nextMilestone(data.events);
-    const vape = streak(new Set(vapeFreeDates(data)));
     const pts = computeBreakdown(data.categories, data.activities, todayKey());
-    return { ls, milestone, vape, pts };
+    return { ls, milestone, pts };
   }, [data]);
 
   if (isLoading || !data || !computed) {
@@ -92,12 +93,14 @@ function Today() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.3em] text-primary">{phase.name}</p>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">{greeting()}</h1>
+          <h1 className="font-display text-2xl font-bold sm:text-3xl">
+            {greeting(profile?.display_name ?? "")}
+          </h1>
           <p className="text-sm text-muted-foreground">{longDate(today)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Chip>
-            <Flame className="size-3 text-primary" /> {computed.vape} day vape-free streak
+            <Flame className="size-3 text-primary" /> {computed.pts.overall}% today
           </Chip>
           <Chip>🏃 {exerciseThisWeek(data)} activities this week</Chip>
           <Chip>💰 {money(earned)} earned this week</Chip>
@@ -238,14 +241,6 @@ function Today() {
               </p>
             </div>
           )}
-        </Panel>
-
-        <Panel title="Vape">
-          <div className="stat-number text-3xl text-vape">{computed.vape} days</div>
-          <p className="mt-1 text-sm text-muted-foreground">vape-free</p>
-          <p className="mt-3 rounded-lg border border-vape/40 bg-vape/10 px-2 py-1.5 text-xs font-medium text-foreground">
-            DO NOT BUY ANOTHER ONE
-          </p>
         </Panel>
 
         <Panel title="Fitness">
