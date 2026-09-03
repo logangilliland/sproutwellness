@@ -10,6 +10,21 @@ import type {
 } from "@/lib/points";
 import { ensureCategories, ensureSuggestions } from "@/lib/mutations";
 import type { GardenPlant } from "@/lib/garden";
+import { DIFFICULTIES, readSettings } from "@/lib/profile";
+
+export type Job = {
+  id: string;
+  name: string;
+  employer: string | null;
+  position: string | null;
+  pay_rate: number;
+  pay_type: string;
+  typical_hours: number | null;
+  location: string | null;
+  start_date: string | null;
+  status: string;
+  is_primary: boolean;
+};
 
 export type FullData = LifeData & {
   categories: PointCategory[];
@@ -17,6 +32,7 @@ export type FullData = LifeData & {
   suggestions: PointSuggestion[];
   dayScores: DayScoreRow[];
   plants: GardenPlant[];
+  jobs: Job[];
 };
 
 async function fetchPoints() {
@@ -37,7 +53,6 @@ async function fetchPoints() {
 }
 
 async function fetchAll(): Promise<FullData> {
-  await supabase.rpc("seed_life_os");
   const [
     habits,
     habitLogs,
@@ -51,6 +66,8 @@ async function fetchAll(): Promise<FullData> {
     shifts,
     dailyLogs,
     changes,
+    jobs,
+    profile,
   ] = await Promise.all([
     supabase.from("habits").select("*").order("sort_order"),
     supabase.from("habit_logs").select("*"),
@@ -64,11 +81,16 @@ async function fetchAll(): Promise<FullData> {
     supabase.from("work_shifts").select("*").order("date", { ascending: false }),
     supabase.from("daily_logs").select("*").order("date", { ascending: false }),
     supabase.from("change_log").select("*").order("created_at", { ascending: false }).limit(80),
+    supabase.from("jobs").select("*").order("sort_order"),
+    supabase.from("profiles").select("settings").maybeSingle(),
   ]);
+
+  const settings = readSettings(profile.data?.settings ?? null);
+  const target = DIFFICULTIES[settings.difficulty]?.target ?? 25;
 
   let points = await fetchPoints();
   if (!points.categories.length) {
-    await ensureCategories(points.categories);
+    await ensureCategories(points.categories, target);
     points = await fetchPoints();
   }
   const seeded = await ensureSuggestions(todayKey(), points.categories, points.suggestions);
@@ -87,6 +109,7 @@ async function fetchAll(): Promise<FullData> {
     shifts: (shifts.data ?? []) as LifeData["shifts"],
     dailyLogs: (dailyLogs.data ?? []) as LifeData["dailyLogs"],
     changes: (changes.data ?? []) as LifeData["changes"],
+    jobs: (jobs.data ?? []) as unknown as Job[],
     ...points,
   };
 }
