@@ -54,7 +54,7 @@ export const DEFAULT_CATEGORIES: Array<Omit<PointCategory, "id">> = [
   { key: "projects", label: "Projects", emoji: "📁", daily_target: 25, active: true, sort_order: 4 },
 ];
 
-/** Optional categories Logan can switch on later (e.g. when school starts). */
+/** Optional categories a user can switch on later (e.g. when school starts). */
 export const OPTIONAL_CATEGORIES: Array<Omit<PointCategory, "id">> = [
   { key: "school", label: "School", emoji: "📚", daily_target: 25, active: true, sort_order: 5 },
 ];
@@ -74,20 +74,20 @@ export const SUGGESTION_CATALOG: Record<string, Array<{ title: string; points: n
     { title: "Shower", points: 10 },
     { title: "Drink water all day", points: 10 },
     { title: "In bed at a reasonable time", points: 15 },
-    { title: "Vape-free day", points: 20 },
+    { title: "Cook instead of takeout", points: 15 },
   ],
   work: [
-    { title: "Uber Eats — 2 hours", points: 15 },
-    { title: "Uber Eats — 4 hours", points: 25 },
-    { title: "Dinner rush shift", points: 20 },
+    { title: "Work a 2 hour shift", points: 15 },
+    { title: "Work a 4 hour shift", points: 25 },
+    { title: "Deep work block", points: 20 },
     { title: "Apply / follow up on work", points: 15 },
   ],
   projects: [
-    { title: "1 hour on the room move", points: 20 },
-    { title: "Pack one box / category", points: 10 },
+    { title: "1 focused hour on a project", points: 20 },
+    { title: "Finish one small task", points: 10 },
     { title: "Laundry", points: 10 },
-    { title: "Clean & tidy room", points: 15 },
-    { title: "Trip prep", points: 15 },
+    { title: "Clean & tidy your space", points: 15 },
+    { title: "Plan the next project step", points: 10 },
   ],
   school: [
     { title: "1 hour of coursework", points: 20 },
@@ -96,6 +96,7 @@ export const SUGGESTION_CATALOG: Record<string, Array<{ title: string; points: n
     { title: "Office hours / study group", points: 15 },
   ],
 };
+
 
 export function computeBreakdown(
   categories: PointCategory[],
