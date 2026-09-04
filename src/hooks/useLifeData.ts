@@ -140,10 +140,12 @@ async function fetchAll(): Promise<FullData> {
 }
 
 export function useLifeData(enabled = true) {
+  const { profile } = useProfile();
   return useQuery({
     queryKey: ["life-data"],
     queryFn: fetchAll,
-    enabled,
+    // never build categories/suggestions before onboarding answers exist
+    enabled: enabled && profile?.onboarded === true,
     staleTime: 10_000,
   });
 }
