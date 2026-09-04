@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [loading, session, navigate]);
 
   useEffect(() => {
-    if (session && profile && !profile.onboarded && path !== "/onboarding") {
+    if (session && profile && profile.onboarded === false && path !== "/onboarding") {
       navigate({ to: "/onboarding" });
     }
   }, [session, profile, path, navigate]);
