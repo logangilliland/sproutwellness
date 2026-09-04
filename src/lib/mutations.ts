@@ -68,7 +68,9 @@ export async function ensureCategories(
     daily_target: target ?? c.daily_target,
     sort_order: c.sort_order,
   }));
-  await supabase.from("point_categories").insert(rows);
+  await supabase
+    .from("point_categories")
+    .upsert(rows, { onConflict: "user_id,key", ignoreDuplicates: true });
 }
 
 export async function ensureSuggestions(
@@ -77,9 +79,22 @@ export async function ensureSuggestions(
   existing: PointSuggestion[],
   ctx: SuggestionContext = {},
 ) {
-  const missing = categories.filter(
-    (c) => c.active && !existing.some((s) => s.date === date && s.category_id === c.id),
-  );
+  const stale: string[] = [];
+  const job = ctx.jobName?.trim();
+  const missing = categories.filter((c) => {
+    const mine = existing.filter((s) => s.date === date && s.category_id === c.id);
+    if (!c.active) return false;
+    if (!mine.length) return true;
+    // the work list must follow the user's current job, not an old one
+    if (c.key === "work" && job && !mine.some((s) => s.title.includes(job))) {
+      stale.push(c.id);
+      return true;
+    }
+    return false;
+  });
+  if (stale.length) {
+    await supabase.from("point_suggestions").delete().eq("date", date).in("category_id", stale);
+  }
   if (!missing.length) return false;
   const rows = missing.flatMap((c) =>
     buildSuggestions(c.key, ctx).map((s, i) => ({
@@ -91,7 +106,9 @@ export async function ensureSuggestions(
     })),
   );
   if (!rows.length) return false;
-  await supabase.from("point_suggestions").insert(rows);
+  await supabase
+    .from("point_suggestions")
+    .upsert(rows, { onConflict: "user_id,date,category_id,title", ignoreDuplicates: true });
   return true;
 }
 
