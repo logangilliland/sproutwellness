@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeBreakdown, SUGGESTION_CATALOG } from "@/lib/points";
+import { buildSuggestions, computeBreakdown } from "@/lib/points";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DB = SupabaseClient<any, any, any>;
@@ -239,6 +239,27 @@ type Ctx = { supabase: DB; today: string };
 
 async function log(ctx: Ctx, summary: string, detail?: string) {
   await ctx.supabase.from("change_log").insert({ summary, detail: detail ?? null });
+}
+
+async function defaultSuggestions(ctx: Ctx, key: string) {
+  const [{ data: jobs }, { data: goals }, { data: projects }] = await Promise.all([
+    ctx.supabase.from("jobs").select("name,status,is_primary"),
+    ctx.supabase.from("goals").select("name,category,status"),
+    ctx.supabase.from("projects").select("name,status"),
+  ]);
+  const list = (jobs ?? []) as any[];
+  const active =
+    list.find((j) => j.is_primary && j.status === "active") ??
+    list.find((j) => j.status === "active") ??
+    list[0] ??
+    null;
+  return buildSuggestions(key, {
+    jobName: active?.name ?? null,
+    goals: ((goals ?? []) as any[])
+      .filter((g) => g.status === "active")
+      .map((g) => ({ name: g.name, category: g.category })),
+    projects: ((projects ?? []) as any[]).filter((p) => p.status === "active").map((p) => p.name),
+  });
 }
 
 async function findHabit(ctx: Ctx, name: string) {
@@ -907,7 +928,7 @@ export async function runTool(ctx: Ctx, name: string, args: any): Promise<string
       const date = args.date ?? today;
       const list = Array.isArray(args.suggestions) && args.suggestions.length
         ? args.suggestions
-        : (SUGGESTION_CATALOG[cat.key] ?? []).slice(0, 5);
+        : await defaultSuggestions(ctx, cat.key);
       await sb.from("point_suggestions").delete().eq("category_id", cat.id).eq("date", date);
       await sb.from("point_suggestions").insert(
         list.slice(0, 6).map((s: any, i: number) => ({
