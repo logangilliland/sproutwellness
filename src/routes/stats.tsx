@@ -38,7 +38,7 @@ export const Route = createFileRoute("/stats")({
       {
         name: "description",
         content:
-          "Daily, weekly and monthly trends: productivity score, habit completion, earnings, hours worked, exercise and vape-free days.",
+          "Daily, weekly and monthly trends: productivity score, habit completion, earnings, hours worked, exercise and habit streaks.",
       },
       { property: "og:title", content: "Stats — Sprout" },
       {
@@ -101,6 +101,7 @@ function StatsPage() {
 
   const ls = lifeScore(data);
   const vape = vapeFreeDates(data);
+  const hasVapeHabit = vape.length > 0;
   const days90 = lastNDays(90);
   const prodToday = productivityScore(data, todayKey());
   const last7 = lastNDays(7).map((d) => productivityScore(data, d));
@@ -184,7 +185,7 @@ function StatsPage() {
           </div>
         </Panel>
 
-        <Panel title="Weekly habits completed & vape-free days">
+        <Panel title={hasVapeHabit ? "Weekly habits completed & vape-free days" : "Weekly habits completed"}>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={charts.weeks}>
@@ -199,7 +200,9 @@ function StatsPage() {
                   }}
                 />
                 <Line type="monotone" dataKey="habits" stroke="oklch(0.85 0.19 132)" strokeWidth={2} />
-                <Line type="monotone" dataKey="vapeFree" stroke="oklch(0.75 0.16 320)" strokeWidth={2} />
+                {hasVapeHabit && (
+                  <Line type="monotone" dataKey="vapeFree" stroke="oklch(0.75 0.16 320)" strokeWidth={2} />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -207,7 +210,9 @@ function StatsPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="🚭 Vape-free streak" value={`${streak(new Set(vape))} days`} sub={`best ${bestStreak(vape)}`} />
+        {hasVapeHabit && (
+          <Stat label="🚭 Vape-free streak" value={`${streak(new Set(vape))} days`} sub={`best ${bestStreak(vape)}`} />
+        )}
         <Stat label="🏃 Activities this week" value={exerciseThisWeek(data)} />
         <Stat
           label="✅ Tasks completed (30d)"
@@ -219,9 +224,11 @@ function StatsPage() {
         />
       </div>
 
-      <Panel title="Vape-free heatmap — last 90 days">
-        <Heatmap days={days90} active={new Set(vape)} tone="bg-vape" />
-      </Panel>
+      {hasVapeHabit && (
+        <Panel title="Vape-free heatmap — last 90 days">
+          <Heatmap days={days90} active={new Set(vape)} tone="bg-vape" />
+        </Panel>
+      )}
 
       <Panel title="Change log">
         <ul className="space-y-2">
