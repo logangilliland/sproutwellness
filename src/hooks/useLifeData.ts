@@ -10,6 +10,7 @@ import type {
 } from "@/lib/points";
 import { ensureCategories, ensureSuggestions } from "@/lib/mutations";
 import type { GardenPlant } from "@/lib/garden";
+import { useProfile } from "@/hooks/useProfile";
 import { CATEGORY_SECTION, DIFFICULTIES, readSettings, sectionOn } from "@/lib/profile";
 
 export type Job = {
