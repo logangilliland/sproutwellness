@@ -3,7 +3,8 @@ import { todayKey } from "@/lib/lifeos";
 import {
   DEFAULT_CATEGORIES,
   OPTIONAL_CATEGORIES,
-  SUGGESTION_CATALOG,
+  buildSuggestions,
+  type SuggestionContext,
   type CategoryBreakdown,
   type PointCategory,
   type PointSuggestion,
@@ -51,30 +52,37 @@ export async function upsertDailyLog(date: string, patch: Record<string, unknown
 
 /* ---------- category point system ---------- */
 
-export async function ensureCategories(existing: PointCategory[], target?: number) {
+export async function ensureCategories(
+  existing: PointCategory[],
+  target?: number,
+  enabledKeys?: string[],
+) {
   if (existing.length) return;
-  await supabase.from("point_categories").insert(
-    DEFAULT_CATEGORIES.map((c) => ({
-      key: c.key,
-      label: c.label,
-      emoji: c.emoji,
-      daily_target: target ?? c.daily_target,
-      sort_order: c.sort_order,
-    })),
-  );
+  const defs = enabledKeys
+    ? DEFAULT_CATEGORIES.filter((c) => enabledKeys.includes(c.key))
+    : DEFAULT_CATEGORIES;
+  const rows = (defs.length ? defs : DEFAULT_CATEGORIES).map((c) => ({
+    key: c.key,
+    label: c.label,
+    emoji: c.emoji,
+    daily_target: target ?? c.daily_target,
+    sort_order: c.sort_order,
+  }));
+  await supabase.from("point_categories").insert(rows);
 }
 
 export async function ensureSuggestions(
   date: string,
   categories: PointCategory[],
   existing: PointSuggestion[],
+  ctx: SuggestionContext = {},
 ) {
   const missing = categories.filter(
     (c) => c.active && !existing.some((s) => s.date === date && s.category_id === c.id),
   );
   if (!missing.length) return false;
   const rows = missing.flatMap((c) =>
-    (SUGGESTION_CATALOG[c.key] ?? []).slice(0, 5).map((s, i) => ({
+    buildSuggestions(c.key, ctx).map((s, i) => ({
       category_id: c.id,
       date,
       title: s.title,
