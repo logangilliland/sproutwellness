@@ -73,6 +73,13 @@ export async function buildSnapshot(supabase: DB, today: string) {
   const lines: string[] = [];
   lines.push(`TODAY: ${today}`);
   lines.push(`USER NAME: ${(profileRes.data as any)?.display_name ?? "unknown"}`);
+  const settings = ((profileRes.data as any)?.settings ?? {}) as any;
+  const sectionMap = (settings.sections ?? {}) as Record<string, boolean>;
+  const offSections = Object.entries(sectionMap)
+    .filter(([, v]) => v === false)
+    .map(([k]) => k);
+  lines.push(`DIFFICULTY: ${settings.difficulty ?? "easy"}`);
+  lines.push(`DISABLED SECTIONS (never suggest or act on these): ${offSections.join(", ") || "none"}`);
   lines.push(
     `JOBS: ${((jobsRes.data ?? []) as any[])
       .map((j) => `${j.name}${j.employer ? ` @ ${j.employer}` : ""} (${j.pay_rate ? `$${j.pay_rate}/${j.pay_type}` : j.pay_type}, ${j.status}${j.is_primary ? ", primary" : ""})`)
