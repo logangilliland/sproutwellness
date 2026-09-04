@@ -59,8 +59,8 @@ function greeting(name: string) {
 }
 
 function Today() {
-  const { data, isLoading } = useLifeData();
-  const { profile } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
+  const { data, isLoading } = useLifeData(!!profile?.onboarded);
   const refresh = useRefreshLife();
   const today = todayKey();
 
@@ -72,7 +72,7 @@ function Today() {
     return { ls, milestone, pts };
   }, [data]);
 
-  if (isLoading || !data || !computed) {
+  if (profileLoading || isLoading || !data || !computed) {
     return <p className="text-muted-foreground">Loading your day…</p>;
   }
 

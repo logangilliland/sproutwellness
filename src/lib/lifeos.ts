@@ -348,22 +348,20 @@ export function lifeScore(data: LifeData): LifeScore {
 
   const moneyGoal = data.goals.find((g) => g.category === "financial" && g.status === "active");
   const earned = weekEarnings(data);
-  const target = Number(moneyGoal?.target_value ?? 250);
-  const moneyVal = Math.round(Math.min(100, (earned / Math.max(1, target)) * 100));
+  const target = Number(moneyGoal?.target_value ?? 0);
+  const moneyVal = target > 0 ? Math.round(Math.min(100, (earned / target) * 100)) : null;
 
   const fitnessVal = Math.round(Math.min(100, (exerciseThisWeek(data) / 4) * 100));
-  const vapeVal = Math.round(Math.min(100, streak(new Set(vapeFreeDates(data))) * 8));
   const respVal = catScore("life");
   const routineVal = Math.round((catScore("morning") + catScore("night")) / 2);
   const prodVal = Math.round(avg(days.map((d) => productivityScore(data, d))));
 
   const parts = [
-    { key: "money", label: "💰 Money", value: moneyVal },
-    { key: "fitness", label: "🏃 Fitness", value: fitnessVal },
-    { key: "vape", label: "🚭 Vaping", value: vapeVal },
-    { key: "resp", label: "🧹 Responsibilities", value: respVal },
-    { key: "routine", label: "🌅 Routine", value: routineVal },
-    { key: "prod", label: "📊 Productivity", value: prodVal },
+    ...(moneyVal !== null ? [{ key: "money", label: "\ud83d\udcb0 Money", value: moneyVal }] : []),
+    { key: "fitness", label: "\ud83c\udfc3 Fitness", value: fitnessVal },
+    { key: "resp", label: "\ud83e\uddf9 Responsibilities", value: respVal },
+    { key: "routine", label: "\ud83c\udf05 Routine", value: routineVal },
+    { key: "prod", label: "\ud83d\udcca Productivity", value: prodVal },
   ];
   return { total: Math.round(avg(parts.map((p) => p.value))), parts };
 }

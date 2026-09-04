@@ -10,7 +10,8 @@ import type {
 } from "@/lib/points";
 import { ensureCategories, ensureSuggestions } from "@/lib/mutations";
 import type { GardenPlant } from "@/lib/garden";
-import { DIFFICULTIES, readSettings } from "@/lib/profile";
+import { useProfile } from "@/hooks/useProfile";
+import { CATEGORY_SECTION, DIFFICULTIES, readSettings, sectionOn } from "@/lib/profile";
 
 export type Job = {
   id: string;
@@ -88,12 +89,37 @@ async function fetchAll(): Promise<FullData> {
   const settings = readSettings(profile.data?.settings ?? null);
   const target = DIFFICULTIES[settings.difficulty]?.target ?? 25;
 
+  const jobRows = (jobs.data ?? []) as unknown as Job[];
+  const activeJob =
+    jobRows.find((j) => j.is_primary && j.status === "active") ??
+    jobRows.find((j) => j.status === "active") ??
+    jobRows[0] ??
+    null;
+  const goalRows = (goals.data ?? []) as LifeData["goals"];
+  const projectRows = (projects.data ?? []) as LifeData["projects"];
+
+  const enabledKeys = Object.entries(CATEGORY_SECTION)
+    .filter(([, section]) => !section || sectionOn(settings, section))
+    .map(([key]) => key);
+
   let points = await fetchPoints();
   if (!points.categories.length) {
-    await ensureCategories(points.categories, target);
+    await ensureCategories(points.categories, target, enabledKeys);
     points = await fetchPoints();
   }
-  const seeded = await ensureSuggestions(todayKey(), points.categories, points.suggestions);
+  const suggestionCtx = {
+    jobName: activeJob?.name ?? null,
+    goals: goalRows
+      .filter((g) => g.status === "active")
+      .map((g) => ({ name: g.name, category: g.category })),
+    projects: projectRows.filter((p) => p.status === "active").map((p) => p.name),
+  };
+  const seeded = await ensureSuggestions(
+    todayKey(),
+    points.categories,
+    points.suggestions,
+    suggestionCtx,
+  );
   if (seeded) points = await fetchPoints();
 
   return {
@@ -109,16 +135,18 @@ async function fetchAll(): Promise<FullData> {
     shifts: (shifts.data ?? []) as LifeData["shifts"],
     dailyLogs: (dailyLogs.data ?? []) as LifeData["dailyLogs"],
     changes: (changes.data ?? []) as LifeData["changes"],
-    jobs: (jobs.data ?? []) as unknown as Job[],
+    jobs: jobRows,
     ...points,
   };
 }
 
 export function useLifeData(enabled = true) {
+  const { profile } = useProfile();
   return useQuery({
     queryKey: ["life-data"],
     queryFn: fetchAll,
-    enabled,
+    // never build categories/suggestions before onboarding answers exist
+    enabled: enabled && profile?.onboarded === true,
     staleTime: 10_000,
   });
 }

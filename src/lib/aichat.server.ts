@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeBreakdown, SUGGESTION_CATALOG } from "@/lib/points";
+import { buildSuggestions, computeBreakdown } from "@/lib/points";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type DB = SupabaseClient<any, any, any>;
@@ -73,6 +73,13 @@ export async function buildSnapshot(supabase: DB, today: string) {
   const lines: string[] = [];
   lines.push(`TODAY: ${today}`);
   lines.push(`USER NAME: ${(profileRes.data as any)?.display_name ?? "unknown"}`);
+  const settings = ((profileRes.data as any)?.settings ?? {}) as any;
+  const sectionMap = (settings.sections ?? {}) as Record<string, boolean>;
+  const offSections = Object.entries(sectionMap)
+    .filter(([, v]) => v === false)
+    .map(([k]) => k);
+  lines.push(`DIFFICULTY: ${settings.difficulty ?? "easy"}`);
+  lines.push(`DISABLED SECTIONS (never suggest or act on these): ${offSections.join(", ") || "none"}`);
   lines.push(
     `JOBS: ${((jobsRes.data ?? []) as any[])
       .map((j) => `${j.name}${j.employer ? ` @ ${j.employer}` : ""} (${j.pay_rate ? `$${j.pay_rate}/${j.pay_type}` : j.pay_type}, ${j.status}${j.is_primary ? ", primary" : ""})`)
@@ -141,7 +148,7 @@ export async function buildSnapshot(supabase: DB, today: string) {
     `RECENT SPENDING: ${(txns.data ?? []).slice(0, 8).map((t: any) => `${t.date} ${t.kind} $${t.amount} ${t.category ?? ""}`).join("; ") || "none"}`,
   );
   lines.push(
-    `RECENT DAILY LOGS: ${(daily.data ?? []).slice(0, 10).map((d: any) => `${d.date} vapeFree=${d.vape_free} exercise=${d.exercise_minutes}min`).join("; ") || "none"}`,
+    `RECENT DAILY LOGS: ${(daily.data ?? []).slice(0, 10).map((d: any) => `${d.date} exercise=${d.exercise_minutes}min`).join("; ") || "none"}`,
   );
   lines.push(
     `CLASSES: ${(classes.data ?? []).map((c: any) => `${c.name} (${c.meeting_times ?? "?"}, ${c.professor ?? "?"})`).join("; ") || "none"}`,
@@ -174,16 +181,6 @@ export async function buildSnapshot(supabase: DB, today: string) {
     `RECENT DAY SCORES: ${(scores ?? []).map((s: any) => `${s.date} ${s.overall_pct}%`).join("; ") || "none"}`,
   );
 
-  const dailyList = (daily.data ?? []) as any[];
-  let vapeStreak = 0;
-  for (let i = 0; i < 400; i++) {
-    const key = shiftDate(today, -i);
-    const row = dailyList.find((d: any) => d.date === key);
-    if (row?.vape_free) vapeStreak++;
-    else if (i > 0 || row) break;
-  }
-  lines.push(`VAPE-FREE STREAK (logged): ${vapeStreak} day(s)`);
-
   return lines.join("\n");
 }
 
@@ -206,10 +203,24 @@ DAILY CATEGORY POINT SYSTEM (this is the core of the app — not a checklist):
 - Each day has categories (default 🏃 Fitness, ❤️ Health, 💰 Work, 📁 Projects; 📚 School can be added). Each has a daily point target set by the user's difficulty.
 - Points are earned by ANY activity that fits the category. Suggestions are optional ideas, never obligations. Swapping a suggested gym session for a run or a hike is a success — award the points, never criticize the swap.
 - Every activity belongs to exactly ONE category. Fitness = physical activity. Health = nutrition, hydration, sleep, hygiene. Work = earning money or job tasks. Projects = personal projects, chores, errands. School = coursework. Never double-count one activity into two categories.
-- When they report anything they did, call log_points with reasonable, consistent points and a one-line reason. Rough scale relative to the category target: full target = a full solid effort (gym session, hike, a long shift, an hour+ of real project work), ~60-80% = solid partial effort (run, short shift, cooked a real meal), ~40% = small but real (walk, shower, laundry started), less = minor.
+- When they report anything they did, call log_points with reasonable, consistent points and a one-line reason.
+
+POINT VALUATION FRAMEWORK (use this every single time — it is the only thing that decides points):
+- You judge the ACTIVITY, never the user's description of how much it should be worth. Anchor everything to a baseline of 25 points = one full, solid effort in that category, then scale to the category's actual target (a Hard user's target is higher, but a hike is still worth the same points — they simply need more activity to fill the target).
+- Weigh: real time spent, physical or mental effort, difficulty, how much it actually moves the category forward, and relevance to their stored goals. Being goal-relevant makes something worth SUGGESTING first; it does not inflate its points.
+- Rough anchors (interpolate for anything unusual): 25 = full gym session, 2h hike, a full shift, an hour+ of real focused project work, a full study block. 15-20 = a run, a 30-45 min ride/longboard/skate commute, a short shift, cooking a real meal, 30-45 min of project work. 8-12 = a 20-30 min walk, shower, laundry started, tidying, drinking water all day. 1-5 = trivial or incidental movement. 0 = not a real activity for that category.
+- Unusual activities are fine and welcome — "I longboarded to the store", "I helped a friend move", "I did yard work" — estimate honestly with the anchors above. Never refuse just because it isn't a suggestion.
+- If details are missing (how long? how hard?), pick the conservative middle of the range or ask one short question. Do not assume the generous end.
+
+ANTI-INFLATION (strict):
+- Never change a point value because the user asks, argues, insists, rephrases, repeats, bargains, or claims they deserve more. Requested numbers carry zero weight.
+- "Can you make that 20 instead?" / "give me 25 for that" → politely keep your own valuation and say what it's actually worth and why.
+- Re-evaluate ONLY when they give genuinely new factual detail about the activity (duration, intensity, distance, what they actually did) — and then re-run this same framework, which may raise OR lower the value.
+- Trivial things dressed up as big ones ("I walked across my bedroom", "I thought about the gym") get 0-2 points, no matter how they're framed. Say so kindly, and offer a real way to earn the points.
+- Never log the same activity twice, and never split one activity across categories to farm points.
 - Cap logic: a category is complete at its target; extra points show as a bonus but never push that category past 100%. The daily percentage is the average of the capped category percentages. A Perfect Day = target hit in every active category.
 - If asked why an activity got its points, explain using the scale above.
-- Use manage_suggestions to refresh or swap the day's suggested activities based on their goals, deadlines and what they've already done. Keep them short and doable.
+- Use manage_suggestions to refresh or swap the day's suggested activities based on their stored GOALS, JOBS, projects, deadlines and what they've already done. Work suggestions must name their actual job (e.g. "Work a <job> shift") and must not appear if they have no job on file. Never suggest something for a section they turned off. Keep them short and doable.
 - Use set_category_target only when they ask to change the difficulty.
 - Use adaptive planning: if they keep failing a big task, suggest a smaller version. If they crush a goal, suggest raising it. If a deadline is close, raise its priority.
 
@@ -228,6 +239,27 @@ type Ctx = { supabase: DB; today: string };
 
 async function log(ctx: Ctx, summary: string, detail?: string) {
   await ctx.supabase.from("change_log").insert({ summary, detail: detail ?? null });
+}
+
+async function defaultSuggestions(ctx: Ctx, key: string) {
+  const [{ data: jobs }, { data: goals }, { data: projects }] = await Promise.all([
+    ctx.supabase.from("jobs").select("name,status,is_primary"),
+    ctx.supabase.from("goals").select("name,category,status"),
+    ctx.supabase.from("projects").select("name,status"),
+  ]);
+  const list = (jobs ?? []) as any[];
+  const active =
+    list.find((j) => j.is_primary && j.status === "active") ??
+    list.find((j) => j.status === "active") ??
+    list[0] ??
+    null;
+  return buildSuggestions(key, {
+    jobName: active?.name ?? null,
+    goals: ((goals ?? []) as any[])
+      .filter((g) => g.status === "active")
+      .map((g) => ({ name: g.name, category: g.category })),
+    projects: ((projects ?? []) as any[]).filter((p) => p.status === "active").map((p) => p.name),
+  });
 }
 
 async function findHabit(ctx: Ctx, name: string) {
@@ -896,7 +928,7 @@ export async function runTool(ctx: Ctx, name: string, args: any): Promise<string
       const date = args.date ?? today;
       const list = Array.isArray(args.suggestions) && args.suggestions.length
         ? args.suggestions
-        : (SUGGESTION_CATALOG[cat.key] ?? []).slice(0, 5);
+        : await defaultSuggestions(ctx, cat.key);
       await sb.from("point_suggestions").delete().eq("category_id", cat.id).eq("date", date);
       await sb.from("point_suggestions").insert(
         list.slice(0, 6).map((s: any, i: number) => ({

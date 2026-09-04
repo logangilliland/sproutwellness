@@ -4,7 +4,8 @@ import { Sprout } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile, useRefreshProfile, saveProfile } from "@/hooks/useProfile";
+import { useProfile, saveProfile } from "@/hooks/useProfile";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import {
   type Difficulty,
   type SectionKey,
   type SproutSettings,
+  CATEGORY_SECTION,
 } from "@/lib/profile";
 import { addJob, ensureCategories } from "@/lib/mutations";
 import { DEFAULT_CATEGORIES } from "@/lib/points";
@@ -49,7 +51,7 @@ const STEPS = ["Name", "Life", "Work", "Goals", "Habits", "Sections", "Difficult
 function Onboarding() {
   const { session, loading } = useAuth();
   const { profile } = useProfile();
-  const refreshProfile = useRefreshProfile();
+  const qc = useQueryClient();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0);
@@ -93,7 +95,10 @@ function Onboarding() {
         settings,
       });
 
-      await ensureCategories([], target);
+      const enabledKeys = Object.entries(CATEGORY_SECTION)
+        .filter(([, section]) => !section || settings.sections[section] !== false)
+        .map(([key]) => key);
+      await ensureCategories([], target, enabledKeys);
       // keep targets aligned with the chosen difficulty for existing categories
       const { data: cats } = await supabase.from("point_categories").select("id");
       if (cats?.length) {
@@ -143,8 +148,12 @@ function Onboarding() {
         }
       }
 
-      refreshProfile();
-      navigate({ to: "/" });
+      // make sure the cached profile says onboarded before we leave, or the
+      // shell bounces us straight back into onboarding
+      await qc.invalidateQueries({ queryKey: ["profile"] });
+      await qc.refetchQueries({ queryKey: ["profile"] });
+      await qc.invalidateQueries({ queryKey: ["life-data"] });
+      navigate({ to: "/", replace: true });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -161,7 +170,11 @@ function Onboarding() {
         <span className="text-primary">SPROUT</span>
       </div>
 
-      <div className="mt-6 flex gap-1.5">
+      <p className="mt-6 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        Step {step + 1} of {STEPS.length} · {STEPS[step]}
+      </p>
+
+      <div className="mt-2 flex gap-1.5">
         {STEPS.map((s, i) => (
           <div
             key={s}
@@ -353,7 +366,7 @@ function Onboarding() {
             </Button>
           ) : (
             <Button onClick={() => finish()} disabled={busy}>
-              Start growing
+              {busy ? "Setting up…" : "Finish setup → Today"}
             </Button>
           )}
         </div>
