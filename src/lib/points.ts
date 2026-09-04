@@ -77,8 +77,8 @@ export const SUGGESTION_CATALOG: Record<string, Array<{ title: string; points: n
     { title: "Cook instead of takeout", points: 15 },
   ],
   work: [
-    { title: "Work a 2 hour shift", points: 15 },
-    { title: "Work a 4 hour shift", points: 25 },
+    { title: "Work a shift", points: 25 },
+    { title: "Work a short shift (2h)", points: 15 },
     { title: "Deep work block", points: 20 },
     { title: "Apply / follow up on work", points: 15 },
   ],
@@ -96,6 +96,68 @@ export const SUGGESTION_CATALOG: Record<string, Array<{ title: string; points: n
     { title: "Office hours / study group", points: 15 },
   ],
 };
+
+export type SuggestionContext = {
+  /** Name of the user's active/primary job, if any. */
+  jobName?: string | null;
+  /** Active goals, used to bias suggestions toward what the user actually wants. */
+  goals?: Array<{ name: string; category: string }>;
+  /** Names of active projects. */
+  projects?: string[];
+};
+
+/**
+ * Build the day's suggestions for a category from the user's own data.
+ * Nothing personal is hardcoded — job, goals and projects come from their account.
+ */
+export function buildSuggestions(
+  key: string,
+  ctx: SuggestionContext = {},
+): Array<{ title: string; points: number }> {
+  const base = [...(SUGGESTION_CATALOG[key] ?? [])];
+  const out: Array<{ title: string; points: number }> = [];
+
+  if (key === "work") {
+    const job = ctx.jobName?.trim();
+    if (!job) {
+      // No job on file — don't invent a shift.
+      out.push({ title: "Deep work block", points: 20 });
+      out.push({ title: "Apply / follow up on work", points: 15 });
+      out.push({ title: "Look for work for 30 min", points: 15 });
+      return out;
+    }
+    out.push({ title: `Work a ${job} shift`, points: 25 });
+    out.push({ title: `Work a short ${job} shift (2h)`, points: 15 });
+    out.push(...base.filter((b) => !b.title.toLowerCase().includes("shift")));
+    return out.slice(0, 5);
+  }
+
+  if (key === "projects" && ctx.projects?.length) {
+    for (const p of ctx.projects.slice(0, 2)) {
+      out.push({ title: `1 focused hour on ${p}`, points: 20 });
+    }
+  }
+
+  const goalTitles = (ctx.goals ?? [])
+    .filter((g) => goalMatchesCategory(g.category, key))
+    .slice(0, 2)
+    .map((g) => ({ title: `Step toward "${g.name}"`, points: 15 }));
+
+  out.push(...goalTitles, ...base);
+  const seen = new Set<string>();
+  return out.filter((s) => !seen.has(s.title) && seen.add(s.title)).slice(0, 5);
+}
+
+function goalMatchesCategory(goalCategory: string, key: string) {
+  const g = goalCategory.toLowerCase();
+  if (key === "fitness") return g === "fitness" || g === "health";
+  if (key === "health") return g === "health";
+  if (key === "work") return g === "financial" || g === "career" || g === "work";
+  if (key === "projects") return g === "personal" || g === "project" || g === "projects";
+  if (key === "school") return g === "school" || g === "academic";
+  return false;
+}
+
 
 
 export function computeBreakdown(
