@@ -38,7 +38,10 @@ export function DayPoints({
   const [globalTarget, setGlobalTarget] = useState("25");
 
   const { breakdown, overall } = useMemo(
-    () => computeBreakdown(categories, activities, date),
+    () =>
+      computeBreakdown(categories, activities, date, {
+        schoolRequiredIncomplete: !schoolOk,
+      }),
     [categories, activities, date],
   );
 
