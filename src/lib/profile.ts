@@ -33,7 +33,12 @@ export const SECTIONS: Array<{
   { key: "projects", label: "Projects", emoji: "📁", blurb: "Multi-step projects with task lists." },
   { key: "calendar", label: "Calendar", emoji: "📅", blurb: "Events, deadlines and daily scores." },
   { key: "stats", label: "Stats", emoji: "📊", blurb: "Trends across everything you track." },
-  { key: "school", label: "School", emoji: "🎓", blurb: "Classes and coursework.", comingSoon: true },
+  {
+    key: "school",
+    label: "School",
+    emoji: "🎓",
+    blurb: "Classes, assignments, Canvas sync and school points.",
+  },
 ];
 
 /** Point categories map onto these sections; disabling a section retires its category. */
@@ -76,7 +81,7 @@ export type Profile = {
 export function readSettings(raw: unknown): SproutSettings {
   const s = (raw ?? {}) as Partial<SproutSettings>;
   return {
-    sections: { ...DEFAULT_SETTINGS.sections, ...(s.sections ?? {}), school: false },
+    sections: { ...DEFAULT_SETTINGS.sections, ...(s.sections ?? {}) },
     difficulty: (s.difficulty ?? DEFAULT_SETTINGS.difficulty) as Difficulty,
     lifeTags: s.lifeTags ?? [],
   };

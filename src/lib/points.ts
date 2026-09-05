@@ -43,6 +43,8 @@ export type CategoryBreakdown = {
   target: number;
   bonus: number;
   pct: number;
+  /** School only: required homework for the day is still outstanding. */
+  requiredIncomplete?: boolean;
 };
 
 export const DEFAULT_TARGET = 25;
@@ -164,6 +166,7 @@ export function computeBreakdown(
   categories: PointCategory[],
   activities: PointActivity[],
   date: string,
+  opts: { schoolRequiredIncomplete?: boolean } = {},
 ): { breakdown: CategoryBreakdown[]; overall: number } {
   const active = categories
     .filter((c) => c.active)
@@ -173,6 +176,9 @@ export function computeBreakdown(
       .filter((a) => a.date === date && a.category_id === c.id)
       .reduce((s, a) => s + Number(a.points), 0);
     const target = Math.max(1, c.daily_target);
+    // School has a special rule: bonus points can never stand in for required homework.
+    const blocked = c.key === "school" && !!opts.schoolRequiredIncomplete;
+    const rawPct = Math.min(100, Math.round((points / target) * 100));
     return {
       key: c.key,
       label: c.label,
@@ -180,7 +186,8 @@ export function computeBreakdown(
       points,
       target,
       bonus: Math.max(0, points - target),
-      pct: Math.min(100, Math.round((points / target) * 100)),
+      pct: blocked ? Math.min(rawPct, 99) : rawPct,
+      requiredIncomplete: blocked,
     };
   });
   const overall = breakdown.length
@@ -190,7 +197,9 @@ export function computeBreakdown(
 }
 
 export function isPerfectDay(breakdown: CategoryBreakdown[]): boolean {
-  return breakdown.length > 0 && breakdown.every((b) => b.points >= b.target);
+  return (
+    breakdown.length > 0 && breakdown.every((b) => b.points >= b.target && !b.requiredIncomplete)
+  );
 }
 
 export function scoreTone(pct: number): string {
