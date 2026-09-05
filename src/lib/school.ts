@@ -167,3 +167,10 @@ export function weekPlan(
 export function termFor(terms: SchoolTerm[], date = todayKey()): SchoolTerm | null {
   return terms.find((t) => t.starts_on <= date && date <= t.ends_on) ?? null;
 }
+
+/** Short class label for lists ("" when the item isn't tied to a class). */
+export function prettyClass(classes: SchoolClass[], classId: string | null): string {
+  if (!classId) return "";
+  const c = classes.find((x) => x.id === classId);
+  return c ? (c.class_code || c.name) : "";
+}
