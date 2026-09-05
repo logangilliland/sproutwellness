@@ -38,7 +38,8 @@ export async function addClass(input: {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateClass(id: string, patch: Record<string, any>) {
-  await supabase.from("classes").update(patch).eq("id", id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await supabase.from("classes").update(patch as any).eq("id", id);
 }
 
 export async function deleteClass(id: string) {
@@ -83,7 +84,8 @@ export async function addAssignment(input: AssignmentInput) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateAssignment(id: string, patch: Record<string, any>) {
   if (typeof patch["size"] === "string") patch["points"] = sizePoints(patch["size"] as AssignmentSize);
-  await supabase.from("assignments").update(patch).eq("id", id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await supabase.from("assignments").update(patch as any).eq("id", id);
 }
 
 export async function deleteAssignment(id: string) {

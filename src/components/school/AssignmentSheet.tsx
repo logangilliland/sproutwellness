@@ -74,7 +74,10 @@ export function AssignmentSheet({
           dueDate: a.due_date ?? undefined,
         },
       });
-      if (!generated.length) return toast.info("No steps came back — try again.");
+      if (!generated.length) {
+        toast.info("No steps came back — try again.");
+        return;
+      }
       await addSteps(a.id, generated, mine.length);
       await after();
       toast.success(a.is_large ? "Broken into steps." : "First steps added.");

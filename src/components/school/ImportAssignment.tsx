@@ -65,7 +65,10 @@ export function ImportAssignment({
   }
 
   async function onFile(file: File) {
-    if (file.size > 6_000_000) return toast.error("That image is too large (max 6 MB).");
+    if (file.size > 6_000_000) {
+      toast.error("That image is too large (max 6 MB).");
+      return;
+    }
     const dataUrl = await new Promise<string>((res, rej) => {
       const r = new FileReader();
       r.onload = () => res(String(r.result));
@@ -76,8 +79,14 @@ export function ImportAssignment({
   }
 
   async function save() {
-    if (!draft?.title?.trim()) return toast.error("Give the assignment a title.");
-    if (!draft.due_date) return toast.error("Pick a due date.");
+    if (!draft?.title?.trim()) {
+      toast.error("Give the assignment a title.");
+      return;
+    }
+    if (!draft.due_date) {
+      toast.error("Pick a due date.");
+      return;
+    }
     setBusy(true);
     try {
       const size = draft.size ?? "medium";
