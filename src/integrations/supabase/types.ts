@@ -186,6 +186,7 @@ export type Database = {
           id: string
           last_error: string | null
           last_sync_at: string | null
+          oauth_state: string | null
           refresh_token: string | null
           status: string
           user_id: string
@@ -200,6 +201,7 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_sync_at?: string | null
+          oauth_state?: string | null
           refresh_token?: string | null
           status?: string
           user_id?: string
@@ -214,6 +216,7 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_sync_at?: string | null
+          oauth_state?: string | null
           refresh_token?: string | null
           status?: string
           user_id?: string
