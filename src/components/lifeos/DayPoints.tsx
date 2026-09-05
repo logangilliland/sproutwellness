@@ -20,6 +20,8 @@ import {
   type PointSuggestion,
 } from "@/lib/points";
 import { toast } from "sonner";
+import { useSchool } from "@/hooks/useSchool";
+import { schoolRequiredComplete } from "@/lib/school";
 
 export function DayPoints({
   date,
@@ -34,6 +36,8 @@ export function DayPoints({
   suggestions: PointSuggestion[];
   refresh: () => void;
 }) {
+  const { data: school } = useSchool();
+  const schoolOk = schoolRequiredComplete(school?.assignments ?? [], date);
   const [showSettings, setShowSettings] = useState(false);
   const [globalTarget, setGlobalTarget] = useState("25");
 
@@ -42,7 +46,7 @@ export function DayPoints({
       computeBreakdown(categories, activities, date, {
         schoolRequiredIncomplete: !schoolOk,
       }),
-    [categories, activities, date],
+    [categories, activities, date, schoolOk],
   );
 
   // Permanently record this day's score (uses today's targets, so history is not rewritten later).
