@@ -44,6 +44,185 @@ export type Database = {
         }
         Relationships: []
       }
+      assignment_steps: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          done: boolean
+          id: string
+          sort_order: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          sort_order?: number
+          title: string
+          user_id?: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          sort_order?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_steps_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignments: {
+        Row: {
+          canvas_id: string | null
+          canvas_url: string | null
+          class_id: string | null
+          completed_on: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          due_time: string | null
+          estimated_minutes: number | null
+          first_steps: Json
+          id: string
+          important: boolean
+          is_large: boolean
+          points: number
+          points_awarded: number
+          progress: number
+          size: string
+          source: string
+          status: string
+          term_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          canvas_id?: string | null
+          canvas_url?: string | null
+          class_id?: string | null
+          completed_on?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          estimated_minutes?: number | null
+          first_steps?: Json
+          id?: string
+          important?: boolean
+          is_large?: boolean
+          points?: number
+          points_awarded?: number
+          progress?: number
+          size?: string
+          source?: string
+          status?: string
+          term_id?: string | null
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          canvas_id?: string | null
+          canvas_url?: string | null
+          class_id?: string | null
+          completed_on?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          estimated_minutes?: number | null
+          first_steps?: Json
+          id?: string
+          important?: boolean
+          is_large?: boolean
+          points?: number
+          points_awarded?: number
+          progress?: number
+          size?: string
+          source?: string
+          status?: string
+          term_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "school_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canvas_connections: {
+        Row: {
+          access_token: string | null
+          base_url: string
+          canvas_user_id: string | null
+          canvas_user_name: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          oauth_state: string | null
+          refresh_token: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          base_url: string
+          canvas_user_id?: string | null
+          canvas_user_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          oauth_state?: string | null
+          refresh_token?: string | null
+          status?: string
+          user_id?: string
+        }
+        Update: {
+          access_token?: string | null
+          base_url?: string
+          canvas_user_id?: string | null
+          canvas_user_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          oauth_state?: string | null
+          refresh_token?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       change_log: {
         Row: {
           created_at: string
@@ -94,6 +273,9 @@ export type Database = {
       }
       classes: {
         Row: {
+          canvas_course_id: string | null
+          class_code: string | null
+          color: string | null
           created_at: string
           id: string
           location: string | null
@@ -102,9 +284,13 @@ export type Database = {
           notes: string | null
           professor: string | null
           term: string | null
+          term_id: string | null
           user_id: string
         }
         Insert: {
+          canvas_course_id?: string | null
+          class_code?: string | null
+          color?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -113,9 +299,13 @@ export type Database = {
           notes?: string | null
           professor?: string | null
           term?: string | null
+          term_id?: string | null
           user_id?: string
         }
         Update: {
+          canvas_course_id?: string | null
+          class_code?: string | null
+          color?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -124,9 +314,18 @@ export type Database = {
           notes?: string | null
           professor?: string | null
           term?: string | null
+          term_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "classes_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "school_terms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_logs: {
         Row: {
@@ -650,6 +849,86 @@ export type Database = {
         }
         Relationships: []
       }
+      school_terms: {
+        Row: {
+          archived: boolean
+          created_at: string
+          ends_on: string
+          id: string
+          name: string
+          starts_on: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          ends_on: string
+          id?: string
+          name: string
+          starts_on: string
+          user_id?: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          ends_on?: string
+          id?: string
+          name?: string
+          starts_on?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      school_todos: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          done: boolean
+          due_date: string | null
+          id: string
+          notes: string | null
+          points: number
+          required: boolean
+          sort_order: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          done?: boolean
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          points?: number
+          required?: boolean
+          sort_order?: number
+          title: string
+          user_id?: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          done?: boolean
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          points?: number
+          required?: boolean
+          sort_order?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_todos_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           created_at: string
@@ -782,7 +1061,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      canvas_status: {
+        Row: {
+          base_url: string | null
+          canvas_user_name: string | null
+          created_at: string | null
+          last_error: string | null
+          last_sync_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          base_url?: string | null
+          canvas_user_name?: string | null
+          created_at?: string | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          base_url?: string | null
+          canvas_user_name?: string | null
+          created_at?: string | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       reset_sprout: { Args: never; Returns: undefined }

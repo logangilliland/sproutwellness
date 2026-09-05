@@ -21,6 +21,7 @@ import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
+import { Route as ApiPublicCanvasCallbackRouteImport } from './routes/api/public/canvas/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +83,11 @@ const StatsRoute = StatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCanvasCallbackRoute = ApiPublicCanvasCallbackRouteImport.update({
+  id: '/api/public/canvas/callback',
+  path: '/api/public/canvas/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/school': typeof SchoolRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
+  '/api/public/canvas/callback': typeof ApiPublicCanvasCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/school': typeof SchoolRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
+  '/api/public/canvas/callback': typeof ApiPublicCanvasCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/school': typeof SchoolRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
+  '/api/public/canvas/callback': typeof ApiPublicCanvasCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/settings'
     | '/stats'
+    | '/api/public/canvas/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/settings'
     | '/stats'
+    | '/api/public/canvas/callback'
   id:
     | '__root__'
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/settings'
     | '/stats'
+    | '/api/public/canvas/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   SchoolRoute: typeof SchoolRoute
   SettingsRoute: typeof SettingsRoute
   StatsRoute: typeof StatsRoute
+  ApiPublicCanvasCallbackRoute: typeof ApiPublicCanvasCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/canvas/callback': {
+      id: '/api/public/canvas/callback'
+      path: '/api/public/canvas/callback'
+      fullPath: '/api/public/canvas/callback'
+      preLoaderRoute: typeof ApiPublicCanvasCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -288,6 +308,7 @@ const rootRouteChildren: RootRouteChildren = {
   SchoolRoute: SchoolRoute,
   SettingsRoute: SettingsRoute,
   StatsRoute: StatsRoute,
+  ApiPublicCanvasCallbackRoute: ApiPublicCanvasCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
