@@ -36,7 +36,8 @@ export async function addClass(input: {
   return data?.id ?? null;
 }
 
-export async function updateClass(id: string, patch: Record<string, unknown>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updateClass(id: string, patch: Record<string, any>) {
   await supabase.from("classes").update(patch).eq("id", id);
 }
 
@@ -79,8 +80,9 @@ export async function addAssignment(input: AssignmentInput) {
   return data?.id ?? null;
 }
 
-export async function updateAssignment(id: string, patch: Record<string, unknown>) {
-  if (typeof patch.size === "string") patch.points = sizePoints(patch.size as AssignmentSize);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updateAssignment(id: string, patch: Record<string, any>) {
+  if (typeof patch["size"] === "string") patch["points"] = sizePoints(patch["size"] as AssignmentSize);
   await supabase.from("assignments").update(patch).eq("id", id);
 }
 

@@ -69,7 +69,7 @@ export const Route = createFileRoute("/school")({
 
 function School() {
   const { profile } = useProfile();
-  const enabled = sectionOn(profile?.settings, "school");
+  const enabled = profile ? sectionOn(profile.settings, "school") : false;
   const { data, isLoading } = useSchool(enabled);
   const { data: life } = useLifeData(enabled);
   const refresh = useRefreshSchool();
@@ -346,7 +346,12 @@ function School() {
                 type="checkbox"
                 checked={t.done}
                 onChange={async () => {
-                  await toggleSchoolTodo(t, schoolCategoryId, today);
+                  await toggleSchoolTodo(t.id, !t.done, {
+                    title: t.title,
+                    points: t.points ?? 5,
+                    schoolCategoryId,
+                    date: today,
+                  });
                   refresh();
                   refreshLife();
                 }}

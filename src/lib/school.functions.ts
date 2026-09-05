@@ -96,21 +96,21 @@ async function callGateway(body: unknown) {
 function normalise(raw: Record<string, unknown>): ParsedAssignment {
   const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
   const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
-  const missing = new Set(arr(raw.missing));
+  const missing = new Set(arr(raw["missing"]));
   const out: ParsedAssignment = {
-    title: str(raw.title),
-    class_name: str(raw.class_name),
-    due_date: /^\d{4}-\d{2}-\d{2}$/.test(String(raw.due_date ?? "")) ? String(raw.due_date) : null,
-    due_time: str(raw.due_time),
-    description: str(raw.description),
-    size: (["small", "medium", "large", "major"] as const).includes(raw.size as never)
-      ? (raw.size as ParsedAssignment["size"])
+    title: str(raw["title"]),
+    class_name: str(raw["class_name"]),
+    due_date: /^\d{4}-\d{2}-\d{2}$/.test(String(raw["due_date"] ?? "")) ? String(raw["due_date"]) : null,
+    due_time: str(raw["due_time"]),
+    description: str(raw["description"]),
+    size: (["small", "medium", "large", "major"] as const).includes(raw["size"] as never)
+      ? (raw["size"] as ParsedAssignment["size"])
       : null,
-    estimated_minutes: typeof raw.estimated_minutes === "number" ? raw.estimated_minutes : null,
-    is_large: raw.is_large === true,
-    first_steps: arr(raw.first_steps).slice(0, 6),
+    estimated_minutes: typeof raw["estimated_minutes"] === "number" ? raw["estimated_minutes"] : null,
+    is_large: raw["is_large"] === true,
+    first_steps: arr(raw["first_steps"]).slice(0, 6),
     missing: [],
-    notes: str(raw.notes),
+    notes: str(raw["notes"]),
   };
   if (!out.title) missing.add("title");
   if (!out.due_date) missing.add("due_date");
@@ -201,8 +201,8 @@ export const generateSteps = createServerFn({ method: "POST" })
         },
       },
     });
-    const steps = Array.isArray(raw.steps)
-      ? raw.steps.filter((s): s is string => typeof s === "string").slice(0, 10)
+    const steps = Array.isArray(raw["steps"])
+      ? raw["steps"].filter((s): s is string => typeof s === "string").slice(0, 10)
       : [];
     return { steps };
   });
