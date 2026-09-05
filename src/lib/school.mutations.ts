@@ -101,25 +101,28 @@ export async function completeAssignment(
   schoolCategoryId: string | null,
   date = todayKey(),
 ) {
+  // finishing before the due date earns a small early bonus
+  const early = !!a.due_date && a.due_date > date;
+  const awarded = a.points + (early ? 3 : 0);
+
   await supabase
     .from("assignments")
     .update({
       status: "done",
       completed_on: date,
       progress: 100,
-      points_awarded: a.points,
+      points_awarded: awarded,
     })
     .eq("id", a.id);
 
   if (schoolCategoryId && a.points_awarded === 0) {
-    const early = a.due_date && a.due_date > date;
     await supabase.from("point_activities").insert({
       category_id: schoolCategoryId,
       date,
       title: a.title,
-      points: a.points,
+      points: awarded,
       source: "assignment",
-      reason: early ? "Finished early" : "Assignment completed",
+      reason: early ? `Finished early (+3 bonus)` : "Assignment completed",
     });
   }
 }

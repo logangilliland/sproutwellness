@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { parseAssignment, type ParsedAssignment } from "@/lib/school.functions";
 import { addAssignment, addSteps } from "@/lib/school.mutations";
-import { SIZE_META, todayKeyLocal, type AssignmentSize, type SchoolClass } from "@/lib/school";
+import { SIZE_META, type AssignmentSize, type SchoolClass } from "@/lib/school";
+import { todayKey } from "@/lib/lifeos";
 
 type Mode = "screenshot" | "paste" | "manual";
 
@@ -45,7 +46,7 @@ export function ImportAssignment({
       const parsed = await parseAssignment({
         data: {
           ...payload,
-          today: todayKeyLocal(),
+          today: todayKey(),
           classes: classes.map((c) => c.name),
         },
       });
@@ -80,7 +81,7 @@ export function ImportAssignment({
     setBusy(true);
     try {
       const size = draft.size ?? "medium";
-      const created = await addAssignment({
+      const createdId = await addAssignment({
         title: draft.title.trim(),
         description: draft.description,
         class_id: classId || null,
@@ -93,8 +94,8 @@ export function ImportAssignment({
         source: mode === "manual" ? "manual" : "import",
         first_steps: draft.first_steps,
       });
-      if (created?.id && draft.is_large && draft.first_steps.length)
-        await addSteps(created.id, draft.first_steps);
+      if (createdId && draft.is_large && draft.first_steps.length)
+        await addSteps(createdId, draft.first_steps);
       toast.success("Assignment added.");
       reset();
       onOpenChange(false);
