@@ -37,7 +37,7 @@ export const SECTIONS: Array<{
     key: "school",
     label: "School",
     emoji: "🎓",
-    blurb: "Classes, assignments, Canvas sync and school points.",
+    blurb: "Classes, assignments, due dates and school points.",
   },
 ];
 

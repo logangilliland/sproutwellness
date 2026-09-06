@@ -430,7 +430,7 @@ function School() {
             </div>
           ))}
           {!data.classes.length && (
-            <p className="text-sm text-muted-foreground">No classes yet — add them or sync Canvas.</p>
+            <p className="text-sm text-muted-foreground">No classes yet — add your first one above.</p>
           )}
         </div>
       </Panel>

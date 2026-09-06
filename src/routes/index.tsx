@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { Panel, Meter, Stat, Chip } from "@/components/lifeos/Bits";
 import { DayPoints } from "@/components/lifeos/DayPoints";
 import { TodayPlant } from "@/components/garden/TodayPlant";
+import { SchoolToday } from "@/components/school/SchoolToday";
 import { computeBreakdown } from "@/lib/points";
 import { ChatPanel } from "@/components/lifeos/ChatPanel";
 import { useLifeData, useRefreshLife } from "@/hooks/useLifeData";
@@ -178,6 +179,8 @@ function Today() {
           )}
         </Panel>
       </div>
+
+      {show("school") && <SchoolToday />}
 
       {show("habits") && habits.length > 0 && (
       <div className="grid gap-4">

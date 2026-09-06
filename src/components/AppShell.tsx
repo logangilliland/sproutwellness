@@ -10,6 +10,7 @@ import {
   Target,
   Wallet,
   Boxes,
+  GraduationCap,
   Sprout,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,7 @@ const NAV: Array<{
   { to: "/money", label: "Money", icon: Wallet, section: "money" },
   { to: "/goals", label: "Goals", icon: Target, section: "goals" },
   { to: "/projects", label: "Projects", icon: Boxes, section: "projects" },
+  { to: "/school", label: "School", icon: GraduationCap, section: "school" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, section: "calendar" },
   { to: "/stats", label: "Stats", icon: BarChart3, section: "stats" },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
