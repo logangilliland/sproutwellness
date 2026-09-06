@@ -30,6 +30,7 @@ import {
   urgencyOf,
   weekPlan,
   type Assignment,
+  type SchoolClass,
 } from "@/lib/school";
 import {
   addClass,
@@ -38,6 +39,7 @@ import {
   deleteClass,
   deleteSchoolTodo,
   toggleSchoolTodo,
+  updateClass,
 } from "@/lib/school.mutations";
 import { canvasConfigured, disconnectCanvas, startCanvasAuth, syncCanvasNow } from "@/lib/canvas.functions";
 import { addDays, prettyDate, startOfWeekKey, todayKey } from "@/lib/lifeos";
@@ -407,30 +409,10 @@ function School() {
         </form>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {data.classes.map((c) => (
-            <div key={c.id} className="flex items-start rounded-xl border border-border bg-surface/40 p-3">
-              <div className="flex-1">
-                <p className="font-display text-base font-semibold">
-                  <GraduationCap className="mr-1 inline size-4 text-muted-foreground" />
-                  {c.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {[c.class_code, c.professor, c.location, c.meeting_times].filter(Boolean).join(" · ")}
-                </p>
-              </div>
-              <button
-                className="text-muted-foreground hover:text-destructive"
-                onClick={async () => {
-                  await deleteClass(c.id);
-                  refresh();
-                }}
-                aria-label="Delete class"
-              >
-                <Trash2 className="size-4" />
-              </button>
-            </div>
+            <ClassCard key={c.id} cls={c} onChange={refresh} />
           ))}
           {!data.classes.length && (
-            <p className="text-sm text-muted-foreground">No classes yet — add them or sync Canvas.</p>
+            <p className="text-sm text-muted-foreground">No classes yet — add your first one above.</p>
           )}
         </div>
       </Panel>
@@ -467,6 +449,80 @@ function School() {
           refreshLife();
         }}
       />
+    </div>
+  );
+}
+
+function ClassCard({ cls, onChange }: { cls: SchoolClass; onChange: () => void }) {
+  const [edit, setEdit] = useState(false);
+  const [form, setForm] = useState({
+    name: cls.name,
+    class_code: cls.class_code ?? "",
+    professor: cls.professor ?? "",
+    meeting_times: cls.meeting_times ?? "",
+    location: cls.location ?? "",
+  });
+
+  if (edit) {
+    return (
+      <form
+        className="grid gap-2 rounded-xl border border-primary/40 bg-surface/40 p-3"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!form.name.trim()) return;
+          await updateClass(cls.id, {
+            name: form.name.trim(),
+            class_code: form.class_code.trim() || null,
+            professor: form.professor.trim() || null,
+            meeting_times: form.meeting_times.trim() || null,
+            location: form.location.trim() || null,
+          });
+          setEdit(false);
+          onChange();
+          toast.success("Class updated.");
+        }}
+      >
+        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Class name" />
+        <Input value={form.class_code} onChange={(e) => setForm({ ...form, class_code: e.target.value })} placeholder="Course code" />
+        <Input value={form.professor} onChange={(e) => setForm({ ...form, professor: e.target.value })} placeholder="Professor" />
+        <Input value={form.meeting_times} onChange={(e) => setForm({ ...form, meeting_times: e.target.value })} placeholder="MWF 10:00" />
+        <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Room / building" />
+        <div className="flex gap-2">
+          <Button size="sm" type="submit">Save</Button>
+          <Button size="sm" type="button" variant="secondary" onClick={() => setEdit(false)}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="flex items-start rounded-xl border border-border bg-surface/40 p-3">
+      <div className="flex-1">
+        <p className="font-display text-base font-semibold">
+          <GraduationCap className="mr-1 inline size-4 text-muted-foreground" />
+          {cls.name}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {[cls.class_code, cls.professor, cls.location, cls.meeting_times].filter(Boolean).join(" \u00b7 ")}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setEdit(true)}>
+          Edit
+        </button>
+        <button
+          className="text-muted-foreground hover:text-destructive"
+          onClick={async () => {
+            await deleteClass(cls.id);
+            onChange();
+          }}
+          aria-label="Delete class"
+        >
+          <Trash2 className="size-4" />
+        </button>
+      </div>
     </div>
   );
 }

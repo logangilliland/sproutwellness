@@ -50,6 +50,12 @@ export function AssignmentSheet({
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [title, setTitle] = useState(assignment?.title ?? "");
+  const [titleFor, setTitleFor] = useState(assignment?.id ?? null);
+  if (assignment && assignment.id !== titleFor) {
+    setTitleFor(assignment.id);
+    setTitle(assignment.title);
+  }
 
   if (!assignment) return null;
   const a = assignment;
@@ -92,7 +98,23 @@ export function AssignmentSheet({
     <Dialog open onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="pr-8">{a.title}</DialogTitle>
+          <DialogTitle className="sr-only">{a.title}</DialogTitle>
+          <Input
+            aria-label="Assignment name"
+            className="mr-8 font-display text-base font-semibold"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={async () => {
+              const next = title.trim();
+              if (!next || next === a.title) {
+                setTitle(a.title);
+                return;
+              }
+              await updateAssignment(a.id, { title: next });
+              onChange();
+              toast.success("Name updated.");
+            }}
+          />
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
