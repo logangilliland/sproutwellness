@@ -60,7 +60,7 @@ export function SchoolToday() {
                     {prettyClass(data.classes, a.class_id)}
                   </span>
                 </span>
-                <Chip tone={isLate || a.due_date === today ? "danger" : ""}>
+                <Chip tone={isLate ? "text-destructive" : ""}>
                   {dueLabel(a, today)}
                 </Chip>
               </li>

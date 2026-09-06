@@ -4,6 +4,8 @@ import { Plus, Star, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Panel, Chip, Meter } from "@/components/lifeos/Bits";
 import { useLifeData, useRefreshLife } from "@/hooks/useLifeData";
+import { useSchool } from "@/hooks/useSchool";
+import { isDone, prettyClass } from "@/lib/school";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +51,7 @@ function monthGrid(anchor: Date) {
 
 function CalendarPage() {
   const { data, isLoading } = useLifeData();
+  const { data: school } = useSchool();
   const refresh = useRefreshLife();
   const [monthOffset, setMonthOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -84,6 +87,20 @@ function CalendarPage() {
     ? data.activities.filter((a) => a.date === selected)
     : [];
   const catById = new Map(data.categories.map((c) => [c.id, c]));
+
+  const dueByDate = new Map<string, { id: string; title: string; done: boolean; cls: string }[]>();
+  for (const a of school?.assignments ?? []) {
+    if (!a.due_date) continue;
+    dueByDate.set(a.due_date, [
+      ...(dueByDate.get(a.due_date) ?? []),
+      {
+        id: a.id,
+        title: a.title,
+        done: isDone(a),
+        cls: prettyClass(school?.classes ?? [], a.class_id),
+      },
+    ]);
+  }
 
   return (
     <div className="space-y-5">
@@ -150,8 +167,20 @@ function CalendarPage() {
                     {e.title}
                   </div>
                 ))}
-                {events.length > 2 && (
-                  <div className="text-muted-foreground">+{events.length - 2}</div>
+                {(dueByDate.get(key) ?? []).slice(0, 2).map((a) => (
+                  <div
+                    key={a.id}
+                    className={`mt-0.5 truncate rounded bg-primary/15 px-1 py-0.5 text-primary ${
+                      a.done ? "line-through opacity-60" : ""
+                    }`}
+                  >
+                    🎓 {a.title}
+                  </div>
+                ))}
+                {events.length + (dueByDate.get(key)?.length ?? 0) > 4 && (
+                  <div className="text-muted-foreground">
+                    +{events.length + (dueByDate.get(key)?.length ?? 0) - 4}
+                  </div>
                 )}
               </button>
             );
@@ -233,6 +262,21 @@ function CalendarPage() {
               </ul>
             </div>
           )}
+        </Panel>
+      )}
+
+      {selected && (dueByDate.get(selected) ?? []).length > 0 && (
+        <Panel title={`School due ${prettyDate(selected)}`}>
+          <ul className="space-y-1 text-sm">
+            {(dueByDate.get(selected) ?? []).map((a) => (
+              <li key={a.id} className="flex items-center gap-2">
+                <span className={`flex-1 truncate ${a.done ? "line-through opacity-60" : ""}`}>
+                  {a.title}
+                </span>
+                <span className="text-xs text-muted-foreground">{a.cls}</span>
+              </li>
+            ))}
+          </ul>
         </Panel>
       )}
 
