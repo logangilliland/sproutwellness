@@ -30,6 +30,7 @@ import {
   urgencyOf,
   weekPlan,
   type Assignment,
+  type SchoolClass,
 } from "@/lib/school";
 import {
   addClass,
@@ -38,6 +39,7 @@ import {
   deleteClass,
   deleteSchoolTodo,
   toggleSchoolTodo,
+  updateClass,
 } from "@/lib/school.mutations";
 import { canvasConfigured, disconnectCanvas, startCanvasAuth, syncCanvasNow } from "@/lib/canvas.functions";
 import { addDays, prettyDate, startOfWeekKey, todayKey } from "@/lib/lifeos";
